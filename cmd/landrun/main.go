@@ -17,7 +17,7 @@ func main() {
 			&cli.StringFlag{
 				Name:    "log-level",
 				Usage:   "Set logging level (error, info, debug)",
-				Value:   "info",
+				Value:   "error",
 				EnvVars: []string{"LANDRUN_LOG_LEVEL"},
 			},
 			&cli.StringSliceFlag{

@@ -32,7 +32,7 @@ func SetLevel(level string) {
 	case "debug":
 		currentLevel = LevelDebug
 	default:
-		currentLevel = LevelInfo
+		currentLevel = LevelError
 	}
 }
 
