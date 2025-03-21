@@ -27,5 +27,5 @@ jobs:
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: landrun
+          name: landrun-linux-amd64
           path: ./landrun
