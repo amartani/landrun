@@ -1,10 +1,11 @@
 package exec
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/zouuup/landrun/internal/log"
 )
 
 func Run(args []string) error {
@@ -13,7 +14,7 @@ func Run(args []string) error {
 		return err
 	}
 
-	log.Printf("[landrun] Executing: %v", args)
+	log.Info("Executing: %v", args)
 
 	// Replace current process image with the target command
 	return syscall.Exec(binary, args, os.Environ())

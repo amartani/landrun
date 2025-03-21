@@ -2,7 +2,9 @@ package sandbox
 
 import (
 	"fmt"
-	"github.com/armin/landrun/internal/landlock"
+
+	"github.com/zouuup/landrun/internal/landlock"
+	"github.com/zouuup/landrun/internal/log"
 )
 
 type Config struct {
@@ -12,12 +14,10 @@ type Config struct {
 }
 
 func Apply(cfg Config) error {
-	// TODO: use landlock.CreateRuleset, AddRule, RestrictSelf
-	fmt.Println("[landrun] Sandbox config:", cfg)
+	log.Info("Sandbox config: %+v", cfg)
 
-	// Example: fail if no kernel support (stubbed)
 	if !landlock.IsSupported() {
-		return fmt.Errorf("Landlock not supported on this system")
+		return fmt.Errorf("landlock not supported on this system")
 	}
 
 	// TODO: Build ruleset from cfg.ReadOnlyPaths, cfg.ReadWritePaths

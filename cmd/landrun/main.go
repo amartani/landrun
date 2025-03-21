@@ -1,12 +1,12 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/urfave/cli/v2"
-	"github.com/armin/landrun/internal/sandbox"
-	"github.com/armin/landrun/internal/exec"
+	"github.com/zouuup/landrun/internal/exec"
+	"github.com/zouuup/landrun/internal/log"
+	"github.com/zouuup/landrun/internal/sandbox"
 )
 
 func main() {
@@ -14,6 +14,12 @@ func main() {
 		Name:  "landrun",
 		Usage: "Run a command in a Landlock sandbox",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "log-level",
+				Usage:   "Set logging level (error, info, debug)",
+				Value:   "info",
+				EnvVars: []string{"LANDRUN_LOG_LEVEL"},
+			},
 			&cli.StringSliceFlag{
 				Name:  "ro",
 				Usage: "Allow read-only access to this path",
@@ -26,6 +32,10 @@ func main() {
 				Name:  "exec",
 				Usage: "Allow executing files in allowed paths",
 			},
+		},
+		Before: func(c *cli.Context) error {
+			log.SetLevel(c.String("log-level"))
+			return nil
 		},
 		Action: func(c *cli.Context) error {
 			args := c.Args().Slice()
@@ -40,7 +50,7 @@ func main() {
 			}
 
 			if err := sandbox.Apply(cfg); err != nil {
-				log.Fatalf("Failed to apply sandbox: %v", err)
+				log.Fatal("Failed to apply sandbox: %v", err)
 			}
 
 			return exec.Run(args)
@@ -48,6 +58,6 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		log.Fatal("%v", err)
 	}
 }
