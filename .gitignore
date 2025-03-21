@@ -27,4 +27,4 @@ main
 tmp
 internal/sandbox/test_rw
 internal/sandbox/test_ro
-
+test_env
