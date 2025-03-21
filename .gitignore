@@ -25,3 +25,6 @@ go.work.sum
 .env
 main
 tmp
+internal/sandbox/test_rw
+internal/sandbox/test_ro
+
