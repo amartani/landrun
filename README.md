@@ -93,11 +93,41 @@ landrun uses Linux's Landlock LSM to create a secure sandbox environment. It pro
 - Execution control
 - Process isolation
 
+Landlock is an access-control system that enables processes to securely restrict themselves and their future children. As a stackable Linux Security Module (LSM), it creates additional security layers on top of existing system-wide access controls, helping to mitigate security impacts from bugs or malicious behavior in applications.
+
+### Landlock Access Control Rights
+
+landrun leverages Landlock's fine-grained access control mechanisms, which include:
+
+**File-specific rights:**
+
+- Execute files (`LANDLOCK_ACCESS_FS_EXECUTE`)
+- Write to files (`LANDLOCK_ACCESS_FS_WRITE_FILE`)
+- Read files (`LANDLOCK_ACCESS_FS_READ_FILE`)
+- Truncate files (`LANDLOCK_ACCESS_FS_TRUNCATE`) - Available since Landlock ABI v3
+
+**Directory-specific rights:**
+
+- Read directory contents (`LANDLOCK_ACCESS_FS_READ_DIR`)
+- Remove directories (`LANDLOCK_ACCESS_FS_REMOVE_DIR`)
+- Remove files (`LANDLOCK_ACCESS_FS_REMOVE_FILE`)
+- Create various filesystem objects (char devices, directories, regular files, sockets, etc.)
+- Refer/reparent files across directories (`LANDLOCK_ACCESS_FS_REFER`) - Available since Landlock ABI v2
+
 ### Limitations
 
 - Landlock must be supported by your kernel
 - The sandbox applies only to file system operations
 - Some operations may require additional permissions
+- Files or directories opened before sandboxing are not subject to Landlock restrictions
+
+## Kernel Compatibility Table
+
+| Feature                            | Minimum Kernel Version | Landlock ABI Version |
+| ---------------------------------- | ---------------------- | -------------------- |
+| Basic filesystem sandboxing        | 5.13                   | 1                    |
+| File referring/reparenting control | 5.17                   | 2                    |
+| File truncation control            | 6.1                    | 3                    |
 
 ## Troubleshooting
 
@@ -105,7 +135,11 @@ If you receive "permission denied" or similar errors:
 
 1. Ensure you've added all necessary paths with `--ro` or `--rw`
 2. Try running with `--log-level debug` to see detailed permission information
-3. Check that Landlock is supported and enabled on your system
+3. Check that Landlock is supported and enabled on your system:
+   ```bash
+   grep -E 'landlock|lsm=' /boot/config-$(uname -r)
+   ```
+   You should see `CONFIG_SECURITY_LANDLOCK=y` and `lsm=landlock,...` in the output
 
 ## Future Features
 
