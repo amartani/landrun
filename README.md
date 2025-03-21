@@ -11,6 +11,14 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
 - ⚡ Optional execution permissions for allowed paths
 - 📝 Configurable logging levels
 
+
+## Demo
+
+<p align="center">
+  <img src="demo.gif" alt="landrun demo" width="700"/>
+</p>
+
+
 ## Requirements
 
 - Linux kernel 5.13 or later with Landlock LSM enabled
