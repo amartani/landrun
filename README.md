@@ -21,7 +21,7 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
 ### Quick Install
 
 ```bash
-go install github.com/zouuup/landrun@latest
+go install github.com/zouuup/landrun/cmd/landrun@latest
 ```
 
 ### From Source
