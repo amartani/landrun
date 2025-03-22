@@ -10,7 +10,6 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
 - 🔄 Support for read-only and read-write paths
 - ⚡ Optional execution permissions for allowed paths
 - 🌐 TCP network access control (binding and connecting)
-- 📝 Configurable logging levels
 
 ## Demo
 
