@@ -111,7 +111,7 @@ This will allow the program to only bind to TCP port 8080 and connect to TCP por
 landrun --ro /home,/usr,/etc --connect-tcp 443 --exec nc kernel.org 443
 ```
 
-This allows connections to port 443 for HTTPS communication, requires access to /etc/resolv.conf for resolving DNS.
+This allows connections to port 443, requires access to /etc/resolv.conf for resolving DNS.
 
 7. Run a web server with selective network permissions:
 
@@ -123,6 +123,12 @@ landrun --ro /usr/bin,/lib,/lib64,/var/www --rw /var/log --bind-tcp 80,443 /usr/
 
 ```bash
 landrun ls
+```
+
+9. If you keep getting permission denied without knowing what exactly going on, best to use strace with it.
+
+```bash
+landrun --ro /usr strace -f -e trace=all ls
 ```
 
 ## Security
