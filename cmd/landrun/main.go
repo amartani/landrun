@@ -9,10 +9,14 @@ import (
 	"github.com/zouuup/landrun/internal/sandbox"
 )
 
+// Version is the current version of landrun
+const Version = "0.1.2"
+
 func main() {
 	app := &cli.App{
-		Name:  "landrun",
-		Usage: "Run a command in a Landlock sandbox",
+		Name:    "landrun",
+		Usage:   "Run a command in a Landlock sandbox",
+		Version: Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "log-level",
