@@ -6,8 +6,8 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
 
 - 🔒 Kernel-level security using Landlock LSM
 - 🚀 Lightweight and fast execution
-- 🛡️ Fine-grained access control for files and directories
-- 🔄 Support for read-only and read-write paths
+- 🛡️ Fine-grained access control for directories
+- 🔄 Support for read and write paths
 - ⚡ Optional execution permissions for allowed paths
 - 🌐 TCP network access control (binding and connecting)
 
@@ -78,7 +78,7 @@ landrun [options] <command> [args...]
 landrun --ro /usr/bin --ro /lib --ro /lib64 --ro /path/to/dir ls /path/to/dir
 ```
 
-2. Run a command with read-write access to a directory:
+2. Run a command with write access to a directory:
 
 ```bash
 landrun --ro /usr/bin --ro /lib --ro /lib64 --rw /path/to/dir touch /path/to/dir/newfile
