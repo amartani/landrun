@@ -50,11 +50,11 @@ landrun [options] <command> [args...]
 
 ### Options
 
-- `--ro <path>`: Allow read-only access to specified path (can be specified multiple times)
-- `--rw <path>`: Allow read-write access to specified path (can be specified multiple times)
+- `--ro <path>`: Allow read-only access to specified path (can be specified multiple times or as comma-separated values)
+- `--rw <path>`: Allow read-write access to specified path (can be specified multiple times or as comma-separated values)
 - `--exec`: Allow executing files in allowed paths
-- `--bind-tcp <port>`: Allow binding to specified TCP port (can be specified multiple times)
-- `--connect-tcp <port>`: Allow connecting to specified TCP port (can be specified multiple times)
+- `--bind-tcp <port>`: Allow binding to specified TCP port (can be specified multiple times or as comma-separated values)
+- `--connect-tcp <port>`: Allow connecting to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: enabled]
 - `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
 
@@ -65,6 +65,7 @@ landrun [options] <command> [args...]
 - When using `--exec`, you still need to specify the directories containing executables with `--ro`
 - Network restrictions require Linux kernel 6.8 or later with Landlock ABI v5
 - The `--best-effort` flag allows graceful degradation on older kernels that don't support all requested restrictions
+- Paths can be specified either using multiple flags or as comma-separated values (e.g., `--ro /usr,/lib,/home`)
 
 ### Environment Variables
 
@@ -75,31 +76,31 @@ landrun [options] <command> [args...]
 1. Run a command with read-only access to a directory:
 
 ```bash
-landrun --ro /usr/bin --ro /lib --ro /lib64 --ro /path/to/dir ls /path/to/dir
+landrun --ro /usr/,/path/to/dir ls /path/to/dir
 ```
 
 2. Run a command with write access to a directory:
 
 ```bash
-landrun --ro /usr/bin --ro /lib --ro /lib64 --rw /path/to/dir touch /path/to/dir/newfile
+landrun --ro /usr --rw /path/to/dir touch /path/to/dir/newfile
 ```
 
 3. Run a command with execution permissions:
 
 ```bash
-landrun --ro /usr/bin --ro /lib --ro /lib64 --exec /usr/bin/bash
+landrun --ro /usr/bin,/lib,/lib64 --exec /usr/bin/bash
 ```
 
 4. Run with debug logging:
 
 ```bash
-landrun --log-level debug --ro /usr/bin --ro /lib --ro /lib64 --ro /path/to/dir ls
+landrun --log-level debug --ro /usr/bin,/lib,/lib64,/path/to/dir ls
 ```
 
 5. Run with network restrictions:
 
 ```bash
-landrun --ro /usr/bin --ro /lib --ro /lib64 --bind-tcp 8080 --connect-tcp 53 /usr/bin/my-server
+landrun --ro /usr/bin,/lib,/lib64 --bind-tcp 8080 --connect-tcp 53 /usr/bin/my-server
 ```
 
 This will allow the program to only bind to TCP port 8080 and connect to TCP port 53.
@@ -107,15 +108,21 @@ This will allow the program to only bind to TCP port 8080 and connect to TCP por
 6. Run a DNS client with appropriate permissions:
 
 ```bash
-landrun --ro /usr/bin --ro /lib --ro /lib64 --ro /etc/resolv.conf --connect-tcp 53 dig example.com
+landrun --ro /home,/usr,/etc --connect-tcp 443 --exec nc kernel.org 443
 ```
 
-This allows DNS resolution by granting access to /etc/resolv.conf and permitting connections to port 53 (DNS).
+This allows connections to port 443 for HTTPS communication, requires access to /etc/resolv.conf for resolving DNS.
 
 7. Run a web server with selective network permissions:
 
 ```bash
-landrun --ro /usr/bin --ro /lib --ro /lib64 --ro /var/www --rw /var/log --bind-tcp 80 --bind-tcp 443 /usr/bin/nginx
+landrun --ro /usr/bin,/lib,/lib64,/var/www --rw /var/log --bind-tcp 80,443 /usr/bin/nginx
+```
+
+8. Running anything without providing paramneters is... maximum security jail!
+
+```bash
+landrun ls
 ```
 
 ## Security
@@ -190,7 +197,7 @@ If you receive "permission denied" or similar errors:
 
 ### Implementation
 
-This project uses the `landlock-lsm/go-landlock` package for sandboxing, which provides both filesystem and network restrictions. The current implementation supports:
+This project uses the `landlock-lsm/go-landlock` package for sandboxing, which provides both filesystem and network restrictions. The current implementation (v0.1.3) supports:
 
 - Read/write/execute restrictions for files and directories
 - TCP port binding restrictions
@@ -199,7 +206,7 @@ This project uses the `landlock-lsm/go-landlock` package for sandboxing, which p
 
 ### Best-Effort Mode
 
-When using `--best-effort` (enabled by default), landrun will gracefully degrade to using the best available Landlock version on the current kernel. This means:
+When using `--best-effort` (disabled by default), landrun will gracefully degrade to using the best available Landlock version on the current kernel. This means:
 
 - On Linux 6.8+: Full filesystem and network restrictions
 - On Linux 6.1-6.7: Filesystem restrictions including truncation, but no network restrictions
