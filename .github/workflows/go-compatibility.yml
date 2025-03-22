@@ -1,0 +1,18 @@
+name: Go version compatibility
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [1.18, 1.20, 1.22, 1.24]
+    name: Go ${{ matrix.go }} build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go build ./cmd/landrun
