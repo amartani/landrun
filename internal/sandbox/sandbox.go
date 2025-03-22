@@ -3,67 +3,80 @@ package sandbox
 import (
 	"fmt"
 
-	"github.com/zouuup/landrun/internal/landlock"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/zouuup/landrun/internal/log"
 )
 
 type Config struct {
-	ReadOnlyPaths  []string
-	ReadWritePaths []string
-	AllowExec      bool
+	ReadOnlyPaths   []string
+	ReadWritePaths  []string
+	AllowExec       bool
+	BindTCPPorts    []int
+	ConnectTCPPorts []int
+	BestEffort      bool
 }
 
 func Apply(cfg Config) error {
-	// if !landlock.IsSupported() {
-	// 	log.Fatal("Landlock is not supported or enabled on this system")
-	// }
-
 	log.Info("Sandbox config: %+v", cfg)
 
-	// Define base read-only access mask
-	roMask := landlock.AccessReadFile | landlock.AccessReadDir
-	if cfg.AllowExec {
-		roMask |= landlock.AccessExecute
+	// Get the most advanced Landlock version available
+	llCfg := landlock.V5
+	if cfg.BestEffort {
+		llCfg = llCfg.BestEffort()
 	}
 
-	// Define read-write access mask with all write permissions
-	rwMask := landlock.AccessWriteFile |
-		landlock.AccessRemoveDir | landlock.AccessRemoveFile |
-		landlock.AccessMakeChar | landlock.AccessMakeDir |
-		landlock.AccessMakeReg | landlock.AccessMakeSock |
-		landlock.AccessMakeFifo | landlock.AccessMakeBlock |
-		landlock.AccessMakeSym
+	// Collect our rules
+	var rules []landlock.Rule
 
-	// Combine masks for ruleset creation
-	fullMask := roMask | rwMask
-
-	log.Debug("Creating ruleset with access mask: 0x%X", fullMask)
-	rulesetFd, err := landlock.CreateRuleset(fullMask)
-	if err != nil {
-		return fmt.Errorf("failed to create Landlock ruleset: %w", err)
-	}
-	defer landlock.CloseFd(rulesetFd)
-
+	// Add rules for read-only paths
 	for _, path := range cfg.ReadOnlyPaths {
 		log.Debug("Adding read-only path: %s", path)
-		err := landlock.AddPathRule(rulesetFd, path, roMask)
-		if err != nil {
-			return fmt.Errorf("failed to add read-only rule for %s: %w", path, err)
+		if cfg.AllowExec {
+			// Include execution rights for read-only paths
+			rules = append(rules, landlock.RODirs(path))
+		} else {
+			// Use ROFiles which doesn't include execution rights
+			rules = append(rules, landlock.ROFiles(path))
 		}
 	}
 
+	// Add rules for read-write paths
 	for _, path := range cfg.ReadWritePaths {
 		log.Debug("Adding read-write path: %s", path)
-		err := landlock.AddPathRule(rulesetFd, path, rwMask)
-		if err != nil {
-			return fmt.Errorf("failed to add read-write rule for %s: %w", path, err)
+		if cfg.AllowExec {
+			// Include all permissions for read-write paths
+			rules = append(rules, landlock.RWDirs(path))
+		} else {
+			// Use RWFiles which doesn't include execution rights
+			rules = append(rules, landlock.RWFiles(path))
 		}
 	}
 
-	if err := landlock.RestrictSelf(rulesetFd); err != nil {
-		return fmt.Errorf("failed to restrict self: %w", err)
+	// Add rules for TCP port binding
+	for _, port := range cfg.BindTCPPorts {
+		log.Debug("Adding TCP bind port: %d", port)
+		rules = append(rules, landlock.BindTCP(uint16(port)))
 	}
 
-	log.Info("Landlock ruleset applied successfully")
+	// Add rules for TCP connections
+	for _, port := range cfg.ConnectTCPPorts {
+		log.Debug("Adding TCP connect port: %d", port)
+		rules = append(rules, landlock.ConnectTCP(uint16(port)))
+	}
+
+	// If we have no rules, just return
+	if len(rules) == 0 {
+		log.Info("No sandbox rules to apply")
+		return nil
+	}
+
+	// Apply all rules at once
+	log.Debug("Applying Landlock restrictions")
+	err := llCfg.Restrict(rules...)
+	if err != nil {
+		return fmt.Errorf("failed to apply Landlock restrictions: %w", err)
+	}
+
+	log.Info("Landlock restrictions applied successfully")
 	return nil
 }

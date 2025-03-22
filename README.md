@@ -9,8 +9,8 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
 - 🛡️ Fine-grained access control for files and directories
 - 🔄 Support for read-only and read-write paths
 - ⚡ Optional execution permissions for allowed paths
+- 🌐 TCP network access control (binding and connecting)
 - 📝 Configurable logging levels
-
 
 ## Demo
 
@@ -18,10 +18,10 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
   <img src="demo.gif" alt="landrun demo" width="700"/>
 </p>
 
-
 ## Requirements
 
 - Linux kernel 5.13 or later with Landlock LSM enabled
+- Linux kernel 6.8 or later for network restrictions (TCP bind/connect)
 - Go 1.24.1 or later (for building from source)
 
 ## Installation
@@ -54,13 +54,18 @@ landrun [options] <command> [args...]
 - `--ro <path>`: Allow read-only access to specified path (can be specified multiple times)
 - `--rw <path>`: Allow read-write access to specified path (can be specified multiple times)
 - `--exec`: Allow executing files in allowed paths
-- `--log-level <level>`: Set logging level (error, info, debug) [default: "info"]
+- `--bind-tcp <port>`: Allow binding to specified TCP port (can be specified multiple times)
+- `--connect-tcp <port>`: Allow connecting to specified TCP port (can be specified multiple times)
+- `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: enabled]
+- `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
 
 ### Important Notes
 
 - You must explicitly add the path to the command you want to run with the `--ro` flag
 - For system commands, you typically need to include `/usr/bin`, `/usr/lib`, and other system directories
 - When using `--exec`, you still need to specify the directories containing executables with `--ro`
+- Network restrictions require Linux kernel 6.8 or later with Landlock ABI v5
+- The `--best-effort` flag allows graceful degradation on older kernels that don't support all requested restrictions
 
 ### Environment Variables
 
@@ -92,6 +97,28 @@ landrun --ro /usr/bin --ro /lib --ro /lib64 --exec /usr/bin/bash
 landrun --log-level debug --ro /usr/bin --ro /lib --ro /lib64 --ro /path/to/dir ls
 ```
 
+5. Run with network restrictions:
+
+```bash
+landrun --ro /usr/bin --ro /lib --ro /lib64 --bind-tcp 8080 --connect-tcp 53 /usr/bin/my-server
+```
+
+This will allow the program to only bind to TCP port 8080 and connect to TCP port 53.
+
+6. Run a DNS client with appropriate permissions:
+
+```bash
+landrun --ro /usr/bin --ro /lib --ro /lib64 --ro /etc/resolv.conf --connect-tcp 53 dig example.com
+```
+
+This allows DNS resolution by granting access to /etc/resolv.conf and permitting connections to port 53 (DNS).
+
+7. Run a web server with selective network permissions:
+
+```bash
+landrun --ro /usr/bin --ro /lib --ro /lib64 --ro /var/www --rw /var/log --bind-tcp 80 --bind-tcp 443 /usr/bin/nginx
+```
+
 ## Security
 
 landrun uses Linux's Landlock LSM to create a secure sandbox environment. It provides:
@@ -99,6 +126,7 @@ landrun uses Linux's Landlock LSM to create a secure sandbox environment. It pro
 - File system access control
 - Directory access restrictions
 - Execution control
+- TCP network restrictions
 - Process isolation
 
 Landlock is an access-control system that enables processes to securely restrict themselves and their future children. As a stackable Linux Security Module (LSM), it creates additional security layers on top of existing system-wide access controls, helping to mitigate security impacts from bugs or malicious behavior in applications.
@@ -122,10 +150,15 @@ landrun leverages Landlock's fine-grained access control mechanisms, which inclu
 - Create various filesystem objects (char devices, directories, regular files, sockets, etc.)
 - Refer/reparent files across directories (`LANDLOCK_ACCESS_FS_REFER`) - Available since Landlock ABI v2
 
+**Network-specific rights** (requires Linux 6.8+ with Landlock ABI v5):
+
+- Bind to specific TCP ports (`LANDLOCK_ACCESS_NET_BIND_TCP`)
+- Connect to specific TCP ports (`LANDLOCK_ACCESS_NET_CONNECT_TCP`)
+
 ### Limitations
 
 - Landlock must be supported by your kernel
-- The sandbox applies only to file system operations
+- Network restrictions require Linux kernel 6.8+ with Landlock ABI v5
 - Some operations may require additional permissions
 - Files or directories opened before sandboxing are not subject to Landlock restrictions
 
@@ -136,6 +169,7 @@ landrun leverages Landlock's fine-grained access control mechanisms, which inclu
 | Basic filesystem sandboxing        | 5.13                   | 1                    |
 | File referring/reparenting control | 5.17                   | 2                    |
 | File truncation control            | 6.1                    | 3                    |
+| Network TCP restrictions           | 6.8                    | 5                    |
 
 ## Troubleshooting
 
@@ -148,15 +182,40 @@ If you receive "permission denied" or similar errors:
    grep -E 'landlock|lsm=' /boot/config-$(uname -r)
    ```
    You should see `CONFIG_SECURITY_LANDLOCK=y` and `lsm=landlock,...` in the output
+4. For network restrictions, verify your kernel version is 6.8+ with Landlock ABI v5:
+   ```bash
+   uname -r
+   ```
+
+## Technical Details
+
+### Implementation
+
+This project uses the `landlock-lsm/go-landlock` package for sandboxing, which provides both filesystem and network restrictions. The current implementation supports:
+
+- Read/write/execute restrictions for files and directories
+- TCP port binding restrictions
+- TCP port connection restrictions
+- Best-effort mode for graceful degradation on older kernels
+
+### Best-Effort Mode
+
+When using `--best-effort` (enabled by default), landrun will gracefully degrade to using the best available Landlock version on the current kernel. This means:
+
+- On Linux 6.8+: Full filesystem and network restrictions
+- On Linux 6.1-6.7: Filesystem restrictions including truncation, but no network restrictions
+- On Linux 5.17-6.0: Basic filesystem restrictions including file reparenting, but no truncation control or network restrictions
+- On Linux 5.13-5.16: Basic filesystem restrictions without file reparenting, truncation control, or network restrictions
+- On older Linux: No restrictions (sandbox disabled)
 
 ## Future Features
 
 Based on the Linux Landlock API capabilities, we plan to add:
 
-- 🌐 Network access control
-- 🔒 Enhanced filesystem controls
-- 🔄 Process scoping
-- 🛡️ Additional security features
+- 🔒 Enhanced filesystem controls with more fine-grained permissions
+- 🌐 Support for UDP and other network protocol restrictions (when supported by Linux kernel)
+- 🔄 Process scoping and resource controls
+- 🛡️ Additional security features as they become available in the Landlock API
 
 ## License
 

@@ -32,6 +32,21 @@ func main() {
 				Name:  "exec",
 				Usage: "Allow executing files in allowed paths",
 			},
+			&cli.IntSliceFlag{
+				Name:   "bind-tcp",
+				Usage:  "Allow binding to these TCP ports",
+				Hidden: false,
+			},
+			&cli.IntSliceFlag{
+				Name:   "connect-tcp",
+				Usage:  "Allow connecting to these TCP ports",
+				Hidden: false,
+			},
+			&cli.BoolFlag{
+				Name:  "best-effort",
+				Usage: "Use best effort mode (fall back to less restrictive sandbox if necessary)",
+				Value: true,
+			},
 		},
 		Before: func(c *cli.Context) error {
 			log.SetLevel(c.String("log-level"))
@@ -44,9 +59,12 @@ func main() {
 			}
 
 			cfg := sandbox.Config{
-				ReadOnlyPaths:  c.StringSlice("ro"),
-				ReadWritePaths: c.StringSlice("rw"),
-				AllowExec:      c.Bool("exec"),
+				ReadOnlyPaths:   c.StringSlice("ro"),
+				ReadWritePaths:  c.StringSlice("rw"),
+				AllowExec:       c.Bool("exec"),
+				BindTCPPorts:    c.IntSlice("bind-tcp"),
+				ConnectTCPPorts: c.IntSlice("connect-tcp"),
+				BestEffort:      c.Bool("best-effort"),
 			}
 
 			if err := sandbox.Apply(cfg); err != nil {
