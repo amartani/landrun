@@ -66,7 +66,12 @@ func Apply(cfg Config) error {
 
 	// If we have no rules, just return
 	if len(rules) == 0 {
-		log.Info("No sandbox rules to apply")
+		log.Error("No rules provided, applying default restrictive rules, this will restrict anything landlock can do.")
+		err := llCfg.Restrict()
+		if err != nil {
+			return fmt.Errorf("failed to apply default Landlock restrictions: %w", err)
+		}
+		log.Info("Default restrictive Landlock rules applied successfully")
 		return nil
 	}
 

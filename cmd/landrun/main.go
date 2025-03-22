@@ -45,7 +45,7 @@ func main() {
 			&cli.BoolFlag{
 				Name:  "best-effort",
 				Usage: "Use best effort mode (fall back to less restrictive sandbox if necessary)",
-				Value: true,
+				Value: false,
 			},
 		},
 		Before: func(c *cli.Context) error {
