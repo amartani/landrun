@@ -21,7 +21,7 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
 
 - Linux kernel 5.13 or later with Landlock LSM enabled
 - Linux kernel 6.8 or later for network restrictions (TCP bind/connect)
-- Go 1.24.1 or later (for building from source)
+- Go 1.18 or later (for building from source)
 
 ## Installation
 
