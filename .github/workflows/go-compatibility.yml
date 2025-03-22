@@ -11,8 +11,14 @@ jobs:
     name: Go ${{ matrix.go }} build
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Go
+
+      - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go }}
-      - run: go build ./cmd/landrun
+
+      - name: Download dependencies
+        run: go mod tidy
+
+      - name: Build landrun
+        run: go build ./cmd/landrun
