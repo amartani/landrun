@@ -68,9 +68,8 @@ landrun [options] <command> [args...]
 
 ### Important Notes
 
-- You must explicitly add the path to the command you want to run with either `--ro` or `--rox` flag
+- You must explicitly add the directory to the command you want to run with `--rox` flag
 - For system commands, you typically need to include `/usr/bin`, `/usr/lib`, and other system directories
-- Use `--rox` for directories containing executables you need to run
 - Use `--rwx` for directories where you need both write access and the ability to execute files
 - Network restrictions require Linux kernel 6.8 or later with Landlock ABI v5
 - By default, no environment variables are passed to the sandboxed command. Use `--env` to explicitly pass environment variables
