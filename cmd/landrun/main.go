@@ -11,7 +11,7 @@ import (
 )
 
 // Version is the current version of landrun
-const Version = "0.1.10"
+const Version = "0.1.11"
 
 func main() {
 	app := &cli.App{
