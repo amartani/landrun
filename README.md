@@ -8,7 +8,7 @@ A lightweight, secure sandbox for running Linux processes using Landlock LSM. Th
 - 🚀 Lightweight and fast execution
 - 🛡️ Fine-grained access control for directories
 - 🔄 Support for read and write paths
-- ⚡ Optional execution permissions for allowed paths
+- ⚡ Path-specific execution permissions
 - 🌐 TCP network access control (binding and connecting)
 
 ## Demo
@@ -51,8 +51,9 @@ landrun [options] <command> [args...]
 ### Options
 
 - `--ro <path>`: Allow read-only access to specified path (can be specified multiple times or as comma-separated values)
+- `--rox <path>`: Allow read-only access with execution to specified path (can be specified multiple times or as comma-separated values)
 - `--rw <path>`: Allow read-write access to specified path (can be specified multiple times or as comma-separated values)
-- `--exec`: Allow executing files in allowed paths
+- `--rwx <path>`: Allow read-write access with execution to specified path (can be specified multiple times or as comma-separated values)
 - `--bind-tcp <port>`: Allow binding to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--connect-tcp <port>`: Allow connecting to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: enabled]
@@ -60,9 +61,10 @@ landrun [options] <command> [args...]
 
 ### Important Notes
 
-- You must explicitly add the path to the command you want to run with the `--ro` flag
+- You must explicitly add the path to the command you want to run with either `--ro` or `--rox` flag
 - For system commands, you typically need to include `/usr/bin`, `/usr/lib`, and other system directories
-- When using `--exec`, you still need to specify the directories containing executables with `--ro`
+- Use `--rox` for directories containing executables you need to run
+- Use `--rwx` for directories where you need both write access and the ability to execute files
 - Network restrictions require Linux kernel 6.8 or later with Landlock ABI v5
 - The `--best-effort` flag allows graceful degradation on older kernels that don't support all requested restrictions
 - Paths can be specified either using multiple flags or as comma-separated values (e.g., `--ro /usr,/lib,/home`)
@@ -76,39 +78,39 @@ landrun [options] <command> [args...]
 1. Run a command with read-only access to a directory:
 
 ```bash
-landrun --ro /usr/,/path/to/dir ls /path/to/dir
+landrun --rox /usr/ --ro /path/to/dir ls /path/to/dir
 ```
 
 2. Run a command with write access to a directory:
 
 ```bash
-landrun --ro /usr --rw /path/to/dir touch /path/to/dir/newfile
+landrun --rox /usr/bin --ro /lib --rw /path/to/dir touch /path/to/dir/newfile
 ```
 
 3. Run a command with execution permissions:
 
 ```bash
-landrun --ro /usr/bin,/lib,/lib64 --exec /usr/bin/bash
+landrun --rox /usr/ --ro /lib,/lib64 /usr/bin/bash
 ```
 
 4. Run with debug logging:
 
 ```bash
-landrun --log-level debug --ro /usr/bin,/lib,/lib64,/path/to/dir ls
+landrun --log-level debug --rox /usr/bin --ro /lib,/lib64,/path/to/dir ls /path/to/dir
 ```
 
 5. Run with network restrictions:
 
 ```bash
-landrun --ro /usr/bin,/lib,/lib64 --bind-tcp 8080 --connect-tcp 53 /usr/bin/my-server
+landrun --rox /usr/bin --ro /lib,/lib64 --bind-tcp 8080 --connect-tcp 80 /usr/bin/my-server
 ```
 
-This will allow the program to only bind to TCP port 8080 and connect to TCP port 53.
+This will allow the program to only bind to TCP port 8080 and connect to TCP port 80.
 
 6. Run a DNS client with appropriate permissions:
 
 ```bash
-landrun --ro /home,/usr,/etc --connect-tcp 443 --exec nc kernel.org 443
+landrun --log-level debug --ro /etc,/usr --rox /usr/bin --connect-tcp 443 nc kernel.org 443
 ```
 
 This allows connections to port 443, requires access to /etc/resolv.conf for resolving DNS.
@@ -116,7 +118,7 @@ This allows connections to port 443, requires access to /etc/resolv.conf for res
 7. Run a web server with selective network permissions:
 
 ```bash
-landrun --ro /usr/bin,/lib,/lib64,/var/www --rw /var/log --bind-tcp 80,443 /usr/bin/nginx
+landrun --rox /usr/bin --ro /lib,/lib64,/var/www --rwx /var/log --bind-tcp 80,443 /usr/bin/nginx
 ```
 
 8. Running anything without providing paramneters is... maximum security jail!

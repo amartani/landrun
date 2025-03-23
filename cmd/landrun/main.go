@@ -29,12 +29,16 @@ func main() {
 				Usage: "Allow read-only access to this path",
 			},
 			&cli.StringSliceFlag{
+				Name:  "rox",
+				Usage: "Allow read-only access with execution to this path",
+			},
+			&cli.StringSliceFlag{
 				Name:  "rw",
 				Usage: "Allow read-write access to this path",
 			},
-			&cli.BoolFlag{
-				Name:  "exec",
-				Usage: "Allow executing files in allowed paths",
+			&cli.StringSliceFlag{
+				Name:  "rwx",
+				Usage: "Allow read-write access with execution to this path",
 			},
 			&cli.IntSliceFlag{
 				Name:   "bind-tcp",
@@ -62,10 +66,22 @@ func main() {
 				log.Fatal("Missing command to run")
 			}
 
+			// Combine --ro and --rox paths for read-only access
+			readOnlyPaths := append([]string{}, c.StringSlice("ro")...)
+			readOnlyPaths = append(readOnlyPaths, c.StringSlice("rox")...)
+
+			// Combine --rw and --rwx paths for read-write access
+			readWritePaths := append([]string{}, c.StringSlice("rw")...)
+			readWritePaths = append(readWritePaths, c.StringSlice("rwx")...)
+
+			// Combine --rox and --rwx paths for executable permissions
+			execPaths := append([]string{}, c.StringSlice("rox")...)
+			execPaths = append(execPaths, c.StringSlice("rwx")...)
+
 			cfg := sandbox.Config{
-				ReadOnlyPaths:   c.StringSlice("ro"),
-				ReadWritePaths:  c.StringSlice("rw"),
-				AllowExec:       c.Bool("exec"),
+				ReadOnlyPaths:   readOnlyPaths,
+				ReadWritePaths:  readWritePaths,
+				ExecutablePaths: execPaths,
 				BindTCPPorts:    c.IntSlice("bind-tcp"),
 				ConnectTCPPorts: c.IntSlice("connect-tcp"),
 				BestEffort:      c.Bool("best-effort"),
