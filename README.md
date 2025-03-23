@@ -96,13 +96,13 @@ landrun --rox /usr/ --ro /lib,/lib64 /usr/bin/bash
 4. Run with debug logging:
 
 ```bash
-landrun --log-level debug --rox /usr/bin --ro /lib,/lib64,/path/to/dir ls /path/to/dir
+landrun --log-level debug --rox /usr/ --ro /lib,/lib64,/path/to/dir ls /path/to/dir
 ```
 
 5. Run with network restrictions:
 
 ```bash
-landrun --rox /usr/bin --ro /lib,/lib64 --bind-tcp 8080 --connect-tcp 80 /usr/bin/my-server
+landrun --rox /usr/ --ro /lib,/lib64 --bind-tcp 8080 --connect-tcp 80 /usr/bin/my-server
 ```
 
 This will allow the program to only bind to TCP port 8080 and connect to TCP port 80.
@@ -110,7 +110,7 @@ This will allow the program to only bind to TCP port 8080 and connect to TCP por
 6. Run a DNS client with appropriate permissions:
 
 ```bash
-landrun --log-level debug --ro /etc,/usr --rox /usr/bin --connect-tcp 443 nc kernel.org 443
+landrun --log-level debug --ro /etc,/usr --rox /usr/ --connect-tcp 443 nc kernel.org 443
 ```
 
 This allows connections to port 443, requires access to /etc/resolv.conf for resolving DNS.
@@ -130,7 +130,7 @@ landrun ls
 9. If you keep getting permission denied without knowing what exactly going on, best to use strace with it.
 
 ```bash
-landrun --ro /usr strace -f -e trace=all ls
+landrun --rox /usr strace -f -e trace=all ls
 ```
 
 ## Security
