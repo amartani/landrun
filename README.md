@@ -196,6 +196,8 @@ If you receive "permission denied" or similar errors:
    grep -E 'landlock|lsm=' /boot/config-$(uname -r)
    # alternatively, if there are no /boot/config-* files
    zgrep -iE 'landlock|lsm=' /proc/config.gz
+   # another alternate method
+   grep -iE 'landlock|lsm=' /lib/modules/$(uname -r)/config
    ```
    You should see `CONFIG_SECURITY_LANDLOCK=y` and `lsm=landlock,...` in the output
 4. For network restrictions, verify your kernel version is 6.8+ with Landlock ABI v5:
