@@ -25,6 +25,7 @@ func getReadWriteExecutableRights() landlock.AccessFSSet {
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSWriteFile)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSTruncate)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeChar)
@@ -34,6 +35,8 @@ func getReadWriteExecutableRights() landlock.AccessFSSet {
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeFifo)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeBlock)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSym)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSRefer)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSIoctlDev)
 	return accessRights
 }
 
@@ -59,6 +62,7 @@ func getReadWriteRights() landlock.AccessFSSet {
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSWriteFile)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSTruncate)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeChar)
@@ -68,6 +72,8 @@ func getReadWriteRights() landlock.AccessFSSet {
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeFifo)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeBlock)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSym)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSRefer)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSIoctlDev)
 	return accessRights
 }
 
