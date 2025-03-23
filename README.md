@@ -194,9 +194,11 @@ If you receive "permission denied" or similar errors:
 3. Check that Landlock is supported and enabled on your system:
    ```bash
    grep -E 'landlock|lsm=' /boot/config-$(uname -r)
+   # alternatively, if there are no /boot/config-* files
+   zgrep -iE 'landlock|lsm=' /proc/config.gz
    ```
    You should see `CONFIG_SECURITY_LANDLOCK=y` and `lsm=landlock,...` in the output
-4. For network restrictions, verify your kernel version is 6.8+ with Landlock ABI v5:
+5. For network restrictions, verify your kernel version is 6.8+ with Landlock ABI v5:
    ```bash
    uname -r
    ```
