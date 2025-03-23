@@ -185,11 +185,13 @@ landrun leverages Landlock's fine-grained access control mechanisms, which inclu
 ## Kernel Compatibility Table
 
 | Feature                            | Minimum Kernel Version | Landlock ABI Version |
-| ---------------------------------- | ---------------------- | -------------------- |
-| Basic filesystem sandboxing        | 5.13                   | 1                    |
-| File referring/reparenting control | 5.17                   | 2                    |
-| File truncation control            | 6.1                    | 3                    |
-| Network TCP restrictions           | 6.8                    | 5                    |
+|-----------------------------------|-------------------------|----------------------|
+| Basic filesystem sandboxing        | 5.13                    | 1                    |
+| File referring/reparenting control | 5.19                    | 2                    |
+| File truncation control            | 6.2                     | 3                    |
+| Network TCP restrictions           | 6.7                     | 4                    |
+| IOCTL on special files             | 6.10                    | 5                    |
+
 
 ## Troubleshooting
 
