@@ -9,23 +9,21 @@ import (
 )
 
 type Config struct {
-	ReadOnlyPaths   []string
-	ReadWritePaths  []string
-	ExecutablePaths []string
-	BindTCPPorts    []int
-	ConnectTCPPorts []int
-	BestEffort      bool
+	ReadOnlyPaths            []string
+	ReadWritePaths           []string
+	ReadOnlyExecutablePaths  []string
+	ReadWriteExecutablePaths []string
+	BindTCPPorts             []int
+	ConnectTCPPorts          []int
+	BestEffort               bool
 }
 
-// getExecutableRights returns a full set of permissions including execution
-func getExecutableRights() landlock.AccessFSSet {
+// getReadWriteExecutableRights returns a full set of permissions including execution
+func getReadWriteExecutableRights() landlock.AccessFSSet {
 	accessRights := landlock.AccessFSSet(0)
-	// Add execute permission
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSExecute)
-	// Add read permissions
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
-	// Add write permissions
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSWriteFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
@@ -39,10 +37,17 @@ func getExecutableRights() landlock.AccessFSSet {
 	return accessRights
 }
 
+func getReadOnlyExecutableRights() landlock.AccessFSSet {
+	accessRights := landlock.AccessFSSet(0)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSExecute)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
+	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
+	return accessRights
+}
+
 // getReadOnlyRights returns permissions for read-only access
 func getReadOnlyRights() landlock.AccessFSSet {
 	accessRights := landlock.AccessFSSet(0)
-	// Add read permissions
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
 	return accessRights
@@ -51,10 +56,8 @@ func getReadOnlyRights() landlock.AccessFSSet {
 // getReadWriteRights returns permissions for read-write access
 func getReadWriteRights() landlock.AccessFSSet {
 	accessRights := landlock.AccessFSSet(0)
-	// Add read permissions
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
-	// Add write permissions
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSWriteFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
@@ -81,9 +84,14 @@ func Apply(cfg Config) error {
 	var rules []landlock.Rule
 
 	// Process executable paths
-	for _, path := range cfg.ExecutablePaths {
-		log.Debug("Adding executable path: %s", path)
-		rules = append(rules, landlock.PathAccess(getExecutableRights(), path))
+	for _, path := range cfg.ReadOnlyExecutablePaths {
+		log.Debug("Adding read-only executable path: %s", path)
+		rules = append(rules, landlock.PathAccess(getReadOnlyExecutableRights(), path))
+	}
+
+	for _, path := range cfg.ReadWriteExecutablePaths {
+		log.Debug("Adding read-write executable path: %s", path)
+		rules = append(rules, landlock.PathAccess(getReadWriteExecutableRights(), path))
 	}
 
 	// Process read-only paths

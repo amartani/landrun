@@ -75,16 +75,17 @@ func main() {
 			readWritePaths = append(readWritePaths, c.StringSlice("rwx")...)
 
 			// Combine --rox and --rwx paths for executable permissions
-			execPaths := append([]string{}, c.StringSlice("rox")...)
-			execPaths = append(execPaths, c.StringSlice("rwx")...)
+			readOnlyExecutablePaths := append([]string{}, c.StringSlice("rox")...)
+			readWriteExecutablePaths := append([]string{}, c.StringSlice("rwx")...)
 
 			cfg := sandbox.Config{
-				ReadOnlyPaths:   readOnlyPaths,
-				ReadWritePaths:  readWritePaths,
-				ExecutablePaths: execPaths,
-				BindTCPPorts:    c.IntSlice("bind-tcp"),
-				ConnectTCPPorts: c.IntSlice("connect-tcp"),
-				BestEffort:      c.Bool("best-effort"),
+				ReadOnlyPaths:            readOnlyPaths,
+				ReadWritePaths:           readWritePaths,
+				ReadOnlyExecutablePaths:  readOnlyExecutablePaths,
+				ReadWriteExecutablePaths: readWriteExecutablePaths,
+				BindTCPPorts:             c.IntSlice("bind-tcp"),
+				ConnectTCPPorts:          c.IntSlice("connect-tcp"),
+				BestEffort:               c.Bool("best-effort"),
 			}
 
 			if err := sandbox.Apply(cfg); err != nil {
