@@ -198,7 +198,7 @@ If you receive "permission denied" or similar errors:
    zgrep -iE 'landlock|lsm=' /proc/config.gz
    ```
    You should see `CONFIG_SECURITY_LANDLOCK=y` and `lsm=landlock,...` in the output
-5. For network restrictions, verify your kernel version is 6.8+ with Landlock ABI v5:
+4. For network restrictions, verify your kernel version is 6.8+ with Landlock ABI v5:
    ```bash
    uname -r
    ```
