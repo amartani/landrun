@@ -62,6 +62,7 @@ landrun [options] <command> [args...]
 - `--rwx <path>`: Allow read-write access with execution to specified path (can be specified multiple times or as comma-separated values)
 - `--bind-tcp <port>`: Allow binding to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--connect-tcp <port>`: Allow connecting to specified TCP port (can be specified multiple times or as comma-separated values)
+- `--env <var>`: Environment variable to pass to the sandboxed command (format: KEY=VALUE or just KEY to pass current value)
 - `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: enabled]
 - `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
 
@@ -72,6 +73,7 @@ landrun [options] <command> [args...]
 - Use `--rox` for directories containing executables you need to run
 - Use `--rwx` for directories where you need both write access and the ability to execute files
 - Network restrictions require Linux kernel 6.8 or later with Landlock ABI v5
+- By default, no environment variables are passed to the sandboxed command. Use `--env` to explicitly pass environment variables
 - The `--best-effort` flag allows graceful degradation on older kernels that don't support all requested restrictions
 - Paths can be specified either using multiple flags or as comma-separated values (e.g., `--ro /usr,/lib,/home`)
 
@@ -138,6 +140,14 @@ landrun ls
 ```bash
 landrun --rox /usr strace -f -e trace=all ls
 ```
+
+10. Run with specific environment variables:
+
+```bash
+landrun --rox /usr --ro /etc --env HOME --env PATH --env CUSTOM_VAR=my_value -- env
+```
+
+This example passes the current HOME and PATH variables, plus a custom variable named CUSTOM_VAR.
 
 ## Security
 

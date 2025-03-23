@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 	"github.com/zouuup/landrun/internal/exec"
@@ -55,6 +56,11 @@ func main() {
 				Usage: "Use best effort mode (fall back to less restrictive sandbox if necessary)",
 				Value: false,
 			},
+			&cli.StringSliceFlag{
+				Name:  "env",
+				Usage: "Environment variables to pass to the sandboxed command (KEY=VALUE or just KEY to pass current value)",
+				Value: cli.NewStringSlice(),
+			},
 		},
 		Before: func(c *cli.Context) error {
 			log.SetLevel(c.String("log-level"))
@@ -88,15 +94,37 @@ func main() {
 				BestEffort:               c.Bool("best-effort"),
 			}
 
+			// Process environment variables
+			envVars := processEnvironmentVars(c.StringSlice("env"))
+
 			if err := sandbox.Apply(cfg); err != nil {
 				log.Fatal("Failed to apply sandbox: %v", err)
 			}
 
-			return exec.Run(args)
+			return exec.Run(args, envVars)
 		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal("%v", err)
 	}
+}
+
+// processEnvironmentVars processes the env flag values
+func processEnvironmentVars(envFlags []string) []string {
+	result := []string{}
+
+	for _, env := range envFlags {
+		// If the flag is just a key (no = sign), get the value from the current environment
+		if !strings.Contains(env, "=") {
+			if val, exists := os.LookupEnv(env); exists {
+				result = append(result, env+"="+val)
+			}
+		} else {
+			// Flag already contains the value (KEY=VALUE format)
+			result = append(result, env)
+		}
+	}
+
+	return result
 }

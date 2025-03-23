@@ -162,6 +162,24 @@ run_test "TCP connection with permission" \
     "./landrun --log-level debug --rox /usr --ro / --connect-tcp 443 -- curl -s --connect-timeout 2 https://example.com" \
     0
 
+# Environment isolation tests
+export TEST_ENV_VAR="test_value_123"
+run_test "Environment isolation" \
+    "./landrun --log-level debug --rox /usr --ro / -- bash -c 'echo \$TEST_ENV_VAR'" \
+    0
+
+run_test "Environment isolation (no variables should be passed)" \
+    "./landrun --log-level debug --rox /usr --ro / -- bash -c '[[ -z \$TEST_ENV_VAR ]] && echo \"No env var\" || echo \$TEST_ENV_VAR'" \
+    0
+
+run_test "Passing specific environment variable" \
+    "./landrun --log-level debug --rox /usr --ro / --env TEST_ENV_VAR -- bash -c 'echo \$TEST_ENV_VAR | grep \"test_value_123\"'" \
+    0
+
+run_test "Passing custom environment variable" \
+    "./landrun --log-level debug --rox /usr --ro / --env CUSTOM_VAR=custom_value -- bash -c 'echo \$CUSTOM_VAR | grep \"custom_value\"'" \
+    0
+
 # Combining different permission types
 run_test "Mixed permissions" \
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --rox $EXEC_DIR --rwx $RW_DIR -- bash -c '$EXEC_DIR/test.sh > $RW_DIR/output.txt && cat $RW_DIR/output.txt'" \
