@@ -225,7 +225,7 @@ If you receive "permission denied" or similar errors:
 
 ### Implementation
 
-This project uses the `landlock-lsm/go-landlock` package for sandboxing, which provides both filesystem and network restrictions. The current implementation (v0.1.3) supports:
+This project uses the [landlock-lsm/go-landlock](https://github.com/landlock-lsm/go-landlock) package for sandboxing, which provides both filesystem and network restrictions. The current implementation supports:
 
 - Read/write/execute restrictions for files and directories
 - TCP port binding restrictions
@@ -250,6 +250,13 @@ Based on the Linux Landlock API capabilities, we plan to add:
 - 🌐 Support for UDP and other network protocol restrictions (when supported by Linux kernel)
 - 🔄 Process scoping and resource controls
 - 🛡️ Additional security features as they become available in the Landlock API
+
+## Acknowledgements
+
+This project wouldn't exist without:
+
+- [Landlock](https://landlock.io), the kernel security module enabling unprivileged sandboxing - maintained by [@l0kod](https://github.com/l0kod)
+- [go-landlock](https://github.com/landlock-lsm/go-landlock), the Go bindings powering this tool - developed by [@gnoack](https://github.com/gnoack)
 
 ## License
 
