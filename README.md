@@ -1,6 +1,6 @@
 # landrun
 
-A lightweight, secure sandbox for running Linux processes using Landlock LSM. Think firejail, but with kernel-level security and minimal overhead.
+A lightweight, secure sandbox for running Linux processes using Landlock. Think firejail, but with kernel-level security and minimal overhead.
 
 Linux Landlock is a kernel-native security module that lets unprivileged processes sandbox themselves - but nobody uses it because the API is ... hard!
 
@@ -10,7 +10,7 @@ It's lightweight, auditable, and wraps Landlock v5 features (file access + TCP r
 
 ## Features
 
-- 🔒 Kernel-level security using Landlock LSM
+- 🔒 Kernel-level security using Landlock
 - 🚀 Lightweight and fast execution
 - 🛡️ Fine-grained access control for directories
 - 🔄 Support for read and write paths
@@ -25,7 +25,7 @@ It's lightweight, auditable, and wraps Landlock v5 features (file access + TCP r
 
 ## Requirements
 
-- Linux kernel 5.13 or later with Landlock LSM enabled
+- Linux kernel 5.13 or later with Landlock enabled
 - Linux kernel 6.7 or later for network restrictions (TCP bind/connect)
 - Go 1.18 or later (for building from source)
 
@@ -150,7 +150,7 @@ This example passes the current HOME and PATH variables, plus a custom variable 
 
 ## Security
 
-landrun uses Linux's Landlock LSM to create a secure sandbox environment. It provides:
+landrun uses Linux's Landlock to create a secure sandbox environment. It provides:
 
 - File system access control
 - Directory access restrictions
