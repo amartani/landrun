@@ -26,7 +26,7 @@ It's lightweight, auditable, and wraps Landlock v5 features (file access + TCP r
 ## Requirements
 
 - Linux kernel 5.13 or later with Landlock LSM enabled
-- Linux kernel 6.8 or later for network restrictions (TCP bind/connect)
+- Linux kernel 6.7 or later for network restrictions (TCP bind/connect)
 - Go 1.18 or later (for building from source)
 
 ## Installation
@@ -63,7 +63,7 @@ landrun [options] <command> [args...]
 - `--bind-tcp <port>`: Allow binding to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--connect-tcp <port>`: Allow connecting to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--env <var>`: Environment variable to pass to the sandboxed command (format: KEY=VALUE or just KEY to pass current value)
-- `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: enabled]
+- `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: disabled]
 - `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
 
 ### Important Notes
@@ -71,7 +71,7 @@ landrun [options] <command> [args...]
 - You must explicitly add the directory to the command you want to run with `--rox` flag
 - For system commands, you typically need to include `/usr/bin`, `/usr/lib`, and other system directories
 - Use `--rwx` for directories where you need both write access and the ability to execute files
-- Network restrictions require Linux kernel 6.8 or later with Landlock ABI v5
+- Network restrictions require Linux kernel 6.7 or later with Landlock ABI v4
 - By default, no environment variables are passed to the sandboxed command. Use `--env` to explicitly pass environment variables
 - The `--best-effort` flag allows graceful degradation on older kernels that don't support all requested restrictions
 - Paths can be specified either using multiple flags or as comma-separated values (e.g., `--ro /usr,/lib,/home`)
@@ -128,7 +128,7 @@ This allows connections to port 443, requires access to /etc/resolv.conf for res
 landrun --rox /usr/bin --ro /lib,/lib64,/var/www --rwx /var/log --bind-tcp 80,443 /usr/bin/nginx
 ```
 
-8. Running anything without providing paramneters is... maximum security jail!
+8. Running anything without providing parameters is... maximum security jail!
 
 ```bash
 landrun ls
@@ -179,7 +179,7 @@ landrun leverages Landlock's fine-grained access control mechanisms, which inclu
 - Create various filesystem objects (char devices, directories, regular files, sockets, etc.)
 - Refer/reparent files across directories (`LANDLOCK_ACCESS_FS_REFER`) - Available since Landlock ABI v2
 
-**Network-specific rights** (requires Linux 6.8+ with Landlock ABI v5):
+**Network-specific rights** (requires Linux 6.7+ with Landlock ABI v4):
 
 - Bind to specific TCP ports (`LANDLOCK_ACCESS_NET_BIND_TCP`)
 - Connect to specific TCP ports (`LANDLOCK_ACCESS_NET_CONNECT_TCP`)
@@ -187,20 +187,19 @@ landrun leverages Landlock's fine-grained access control mechanisms, which inclu
 ### Limitations
 
 - Landlock must be supported by your kernel
-- Network restrictions require Linux kernel 6.8+ with Landlock ABI v5
+- Network restrictions require Linux kernel 6.7 or later with Landlock ABI v4
 - Some operations may require additional permissions
 - Files or directories opened before sandboxing are not subject to Landlock restrictions
 
 ## Kernel Compatibility Table
 
 | Feature                            | Minimum Kernel Version | Landlock ABI Version |
-|-----------------------------------|-------------------------|----------------------|
-| Basic filesystem sandboxing        | 5.13                    | 1                    |
-| File referring/reparenting control | 5.19                    | 2                    |
-| File truncation control            | 6.2                     | 3                    |
-| Network TCP restrictions           | 6.7                     | 4                    |
-| IOCTL on special files             | 6.10                    | 5                    |
-
+| ---------------------------------- | ---------------------- | -------------------- |
+| Basic filesystem sandboxing        | 5.13                   | 1                    |
+| File referring/reparenting control | 5.19                   | 2                    |
+| File truncation control            | 6.2                    | 3                    |
+| Network TCP restrictions           | 6.7                    | 4                    |
+| IOCTL on special files             | 6.10                   | 5                    |
 
 ## Troubleshooting
 
@@ -217,7 +216,7 @@ If you receive "permission denied" or similar errors:
    grep -iE 'landlock|lsm=' /lib/modules/$(uname -r)/config
    ```
    You should see `CONFIG_SECURITY_LANDLOCK=y` and `lsm=landlock,...` in the output
-4. For network restrictions, verify your kernel version is 6.8+ with Landlock ABI v5:
+4. For network restrictions, verify your kernel version is 6.7+ with Landlock ABI v4:
    ```bash
    uname -r
    ```
@@ -237,10 +236,10 @@ This project uses the `landlock-lsm/go-landlock` package for sandboxing, which p
 
 When using `--best-effort` (disabled by default), landrun will gracefully degrade to using the best available Landlock version on the current kernel. This means:
 
-- On Linux 6.8+: Full filesystem and network restrictions
-- On Linux 6.1-6.7: Filesystem restrictions including truncation, but no network restrictions
-- On Linux 5.17-6.0: Basic filesystem restrictions including file reparenting, but no truncation control or network restrictions
-- On Linux 5.13-5.16: Basic filesystem restrictions without file reparenting, truncation control, or network restrictions
+- On Linux 6.7+: Full filesystem and network restrictions
+- On Linux 6.2-6.6: Filesystem restrictions including truncation, but no network restrictions
+- On Linux 5.19-6.1: Basic filesystem restrictions including file reparenting, but no truncation control or network restrictions
+- On Linux 5.13-5.18: Basic filesystem restrictions without file reparenting, truncation control, or network restrictions
 - On older Linux: No restrictions (sandbox disabled)
 
 ## Future Features
