@@ -61,6 +61,16 @@ func main() {
 				Usage: "Environment variables to pass to the sandboxed command (KEY=VALUE or just KEY to pass current value)",
 				Value: cli.NewStringSlice(),
 			},
+			&cli.BoolFlag{
+				Name:  "unrestricted-filesystem",
+				Usage: "Allow unrestricted filesystem access",
+				Value: false,
+			},
+			&cli.BoolFlag{
+				Name:  "unrestricted-network",
+				Usage: "Allow unrestricted network access",
+				Value: false,
+			},
 		},
 		Before: func(c *cli.Context) error {
 			log.SetLevel(c.String("log-level"))
@@ -92,6 +102,8 @@ func main() {
 				BindTCPPorts:             c.IntSlice("bind-tcp"),
 				ConnectTCPPorts:          c.IntSlice("connect-tcp"),
 				BestEffort:               c.Bool("best-effort"),
+				UnrestrictedFilesystem:   c.Bool("unrestricted-filesystem"),
+				UnrestrictedNetwork:      c.Bool("unrestricted-network"),
 			}
 
 			// Process environment variables

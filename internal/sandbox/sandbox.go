@@ -16,6 +16,8 @@ type Config struct {
 	BindTCPPorts             []int
 	ConnectTCPPorts          []int
 	BestEffort               bool
+	UnrestrictedFilesystem   bool
+	UnrestrictedNetwork      bool
 }
 
 // getReadWriteExecutableRights returns a full set of permissions including execution
@@ -124,6 +126,19 @@ func Apply(cfg Config) error {
 		rules = append(rules, landlock.ConnectTCP(uint16(port)))
 	}
 
+	if cfg.UnrestrictedFilesystem {
+		log.Info("Unrestricted filesystem access enabled")
+		rules = append(rules, landlock.PathAccess(getReadWriteExecutableRights(), "/"))
+	}
+
+	if cfg.UnrestrictedNetwork {
+		log.Info("Unrestricted network access enabled")
+		for i := 0; i < 65535; i++ {
+			rules = append(rules, landlock.BindTCP(uint16(i)))
+			rules = append(rules, landlock.ConnectTCP(uint16(i)))
+		}
+	}
+
 	// If we have no rules, just return
 	if len(rules) == 0 {
 		log.Error("No rules provided, applying default restrictive rules, this will restrict anything landlock can do.")
@@ -144,14 +159,4 @@ func Apply(cfg Config) error {
 
 	log.Info("Landlock restrictions applied successfully")
 	return nil
-}
-
-// pathInSlice checks if a path exists in a slice of paths
-func pathInSlice(path string, paths []string) bool {
-	for _, p := range paths {
-		if p == path {
-			return true
-		}
-	}
-	return false
 }

@@ -194,6 +194,23 @@ run_test "Execute from read-only paths regression test" \
     "./landrun --log-level debug --rox /usr --ro /usr/bin -- /usr/bin/id" \
     0
 
+run_test "Unrestricted filesystem access" \
+    "./landrun --log-level debug --unrestricted-filesystem ls /usr" \
+    0
+
+run_test "Unrestricted network access" \
+    "./landrun --log-level debug --unrestricted-network --rox /usr --ro /etc -- curl -s --connect-timeout 2 https://example.com" \
+    0
+
+run_test "Restricted filesystem access" \
+    "./landrun --log-level debug ls /usr" \
+    1
+
+run_test "Restricted network access" \
+    "./landrun --log-level debug --rox /usr --ro /etc -- curl -s --connect-timeout 2 https://example.com" \
+    7
+
+
 # Cleanup
 print_status "Cleaning up..."
 rm -rf "$TEST_DIR"
