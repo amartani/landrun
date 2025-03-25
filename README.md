@@ -2,7 +2,7 @@
 
 A lightweight, secure sandbox for running Linux processes using Landlock. Think firejail, but with kernel-level security and minimal overhead.
 
-Linux Landlock is a kernel-native security module that lets unprivileged processes sandbox themselves - but nobody uses it because the API is ... hard!
+Linux Landlock is a kernel-native security module that lets unprivileged processes sandbox themselves.
 
 Landrun is designed to make it practical to sandbox any command with fine-grained filesystem and network access controls. No root. No containers. No SELinux/AppArmor configs.
 
