@@ -65,6 +65,8 @@ landrun [options] <command> [args...]
 - `--env <var>`: Environment variable to pass to the sandboxed command (format: KEY=VALUE or just KEY to pass current value)
 - `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: disabled]
 - `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
+- `--unrestricted-network`: allows unrestricted network access.
+- `--unrestricted-filesystem`: allows unrestricted filesystem access.
 
 ### Important Notes
 
@@ -241,6 +243,29 @@ When using `--best-effort` (disabled by default), landrun will gracefully degrad
 - On Linux 5.19-6.1: Basic filesystem restrictions including file reparenting, but no truncation control or network restrictions
 - On Linux 5.13-5.18: Basic filesystem restrictions without file reparenting, truncation control, or network restrictions
 - On older Linux: No restrictions (sandbox disabled)
+
+### Tests
+
+The project includes a comprehensive test suite that verifies:
+
+- Basic filesystem access controls (read-only, read-write, execute)
+- Directory traversal and path handling
+- Network restrictions (TCP bind/connect)
+- Environment variable isolation
+- System command execution
+- Edge cases and regression tests
+
+Run the tests with:
+
+```bash
+./test.sh
+```
+
+Use `--keep-binary` to preserve the test binary after completion:
+
+```bash
+./test.sh --keep-binary
+```
 
 ## Future Features
 

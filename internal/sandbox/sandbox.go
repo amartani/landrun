@@ -133,6 +133,7 @@ func Apply(cfg Config) error {
 
 	if cfg.UnrestrictedNetwork {
 		log.Info("Unrestricted network access enabled")
+		// TODO: This is a hack to allow all network access. We should find a better way to do this.
 		for i := 0; i < 65535; i++ {
 			rules = append(rules, landlock.BindTCP(uint16(i)))
 			rules = append(rules, landlock.ConnectTCP(uint16(i)))

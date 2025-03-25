@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check if we should keep the binary
+KEEP_BINARY=false
+if [ "$1" = "--keep-binary" ]; then
+    KEEP_BINARY=true
+fi
+
 # Don't exit on error, we'll handle errors in the run_test function
 set +e
 
@@ -214,6 +220,8 @@ run_test "Restricted network access" \
 # Cleanup
 print_status "Cleaning up..."
 rm -rf "$TEST_DIR"
-rm -f landrun
+if [ "$KEEP_BINARY" = false ]; then
+    rm -f landrun
+fi
 
 print_success "All tests completed!" 
