@@ -267,6 +267,12 @@ Use `--keep-binary` to preserve the test binary after completion:
 ./test.sh --keep-binary
 ```
 
+Use `--use-system` to test against the system-installed landrun binary:
+
+```bash
+./test.sh --use-system
+```
+
 ## Future Features
 
 Based on the Linux Landlock API capabilities, we plan to add:

@@ -2,9 +2,24 @@
 
 # Check if we should keep the binary
 KEEP_BINARY=false
-if [ "$1" = "--keep-binary" ]; then
-    KEEP_BINARY=true
-fi
+USE_SYSTEM_BINARY=false
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        "--keep-binary")
+            KEEP_BINARY=true
+            shift
+            ;;
+        "--use-system")
+            USE_SYSTEM_BINARY=true
+            shift
+            ;;
+        *)
+            echo "Unknown parameter: $1"
+            exit 1
+            ;;
+    esac
+done
 
 # Don't exit on error, we'll handle errors in the run_test function
 set +e
@@ -28,14 +43,16 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Build the binary
-print_status "Building landrun binary..."
-go build -o landrun cmd/landrun/main.go
-if [ $? -ne 0 ]; then
-    print_error "Failed to build landrun binary"
-    exit 1
+# Build the binary if not using system binary
+if [ "$USE_SYSTEM_BINARY" = false ]; then
+    print_status "Building landrun binary..."
+    go build -o landrun cmd/landrun/main.go
+    if [ $? -ne 0 ]; then
+        print_error "Failed to build landrun binary"
+        exit 1
+    fi
+    print_success "Binary built successfully"
 fi
-print_success "Binary built successfully"
 
 # Create test directories
 TEST_DIR="test_env"
@@ -66,6 +83,11 @@ run_test() {
     local name="$1"
     local cmd="$2"
     local expected_exit="$3"
+    
+    # Replace ./landrun with landrun if using system binary
+    if [ "$USE_SYSTEM_BINARY" = true ]; then
+        cmd="${cmd//.\/landrun/landrun}"
+    fi
     
     print_status "Running test: $name"
     eval "$cmd"
@@ -220,7 +242,7 @@ run_test "Restricted network access" \
 # Cleanup
 print_status "Cleaning up..."
 rm -rf "$TEST_DIR"
-if [ "$KEEP_BINARY" = false ]; then
+if [ "$KEEP_BINARY" = false ] && [ "$USE_SYSTEM_BINARY" = false ]; then
     rm -f landrun
 fi
 
