@@ -46,9 +46,9 @@ go build -o landrun cmd/landrun/main.go
 sudo cp landrun /usr/local/bin/
 ```
 
-## Distros
+### Distros
 
-### Arch (AUR)
+#### Arch (AUR)
 maintained by [Vcalv](https://github.com/vcalv)
 ```bash
 yay -S landrun
