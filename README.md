@@ -50,8 +50,18 @@ sudo cp landrun /usr/local/bin/
 
 #### Arch (AUR)
 maintained by [Vcalv](https://github.com/vcalv)
+
+[AUR](https://aur.archlinux.org/packages/landrun-git)
 ```bash
 yay -S landrun
+```
+
+#### Slackware
+maintained by [r1w1s1](https://github.com/r1w1s1)
+
+[Slackbuild](https://slackbuilds.org/repository/15.0/network/landrun/?search=landrun)
+```bash
+sudo sbopkg -i packagename
 ```
 
 ## Usage
