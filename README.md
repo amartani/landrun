@@ -85,6 +85,8 @@ landrun [options] <command> [args...]
 - `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
 - `--unrestricted-network`: Allows unrestricted network access (disables all network restrictions)
 - `--unrestricted-filesystem`: Allows unrestricted filesystem access (disables all filesystem restrictions)
+- `--add-exec`: Automatically adds the executing binary to --rox
+- `--ldd`: Automatically adds required libraries to --rox
 
 ### Important Notes
 
@@ -182,6 +184,18 @@ landrun --rox /usr --ro /etc --env HOME --env PATH --env CUSTOM_VAR=my_value -- 
 13. Run command with explicity access to files instead of directories:
 ```bash
 landrun --rox /usr/lib/libc.so.6 --rox /usr/lib64/ld-linux-x86-64.so.2  --rox /usr/bin/true /usr/bin/true
+```
+
+14. Run a command with --add-exec which automatically adds target binary to --rox
+
+```bash
+landrun --rox /usr/lib/ --add-exec /usr/bin/true
+```
+
+15. Run a command with --ldd and --add-exec which automatically adds required libraries and target binary to --rox
+
+```bash
+landrun --ldd --add-exec /usr/bin/true
 ```
 
 Note that shared libs always need exec permission due to how they are loaded, PROT_EXEC on mmap() etc.
