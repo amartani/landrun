@@ -140,6 +140,7 @@ func main() {
 			// Add command's directory to readOnlyExecutablePaths
 			if c.Bool("add-exec") {
 				readOnlyExecutablePaths = append(readOnlyExecutablePaths, binary)
+				log.Debug("Added executable path: %v", binary)
 			}
 
 			// If --ldd flag is set, detect and add library dependencies
