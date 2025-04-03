@@ -174,6 +174,14 @@ run_test "Execute access with rox flag on a file that is executable in same dire
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --rox $EXEC_DIR/test.sh -- $EXEC_DIR/test2.sh" \
     1
 
+run_test "Execute a file with --add-exec flag" \
+    "./landrun --log-level debug --add-exec --rox /usr --ro /lib --ro /lib64 --rox $EXEC_DIR/test.sh -- $EXEC_DIR/test2.sh" \
+    0
+
+run_test "Execute a file with --add-exec and --ldd flag" \
+    "./landrun --log-level debug --add-exec --ldd -- /usr/bin/true" \
+    0
+
 
 run_test "No execute access with just ro flag" \
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $EXEC_DIR -- $EXEC_DIR/test.sh" \
