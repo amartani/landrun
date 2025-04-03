@@ -66,13 +66,21 @@ fi
 # Create test directories
 TEST_DIR="test_env"
 RO_DIR="$TEST_DIR/ro"
+RO_DIR_NESTED_RO="$RO_DIR/ro_nested_ro_1"
+RO_DIR_NESTED_RW="$RO_DIR/ro_nested_rw_1"
+RO_DIR_NESTED_EXEC="$RO_DIR/ro_nested_exec"
+
 RW_DIR="$TEST_DIR/rw"
+RW_DIR_NESTED_RO="$RW_DIR/rw_nested_ro_1"
+RW_DIR_NESTED_RW="$RW_DIR/rw_nested_rw_1"
+RW_DIR_NESTED_EXEC="$RW_DIR/rw_nested_exec"
+
 EXEC_DIR="$TEST_DIR/exec"
 NESTED_DIR="$TEST_DIR/nested/path/deep"
 
 print_status "Setting up test environment..."
 rm -rf "$TEST_DIR"
-mkdir -p "$RO_DIR" "$RW_DIR" "$EXEC_DIR" "$NESTED_DIR"
+mkdir -p "$RO_DIR" "$RW_DIR" "$EXEC_DIR" "$NESTED_DIR" "$RO_DIR_NESTED_RO" "$RO_DIR_NESTED_RW" "$RO_DIR_NESTED_EXEC" "$RW_DIR_NESTED_RO" "$RW_DIR_NESTED_RW" "$RW_DIR_NESTED_EXEC"
 
 # Create test files
 echo "readonly content" > "$RO_DIR/test.txt"
@@ -81,6 +89,20 @@ echo "nested content" > "$NESTED_DIR/test.txt"
 echo "#!/bin/bash" > "$EXEC_DIR/test.sh"
 echo "echo 'executable content'" >> "$EXEC_DIR/test.sh"
 chmod +x "$EXEC_DIR/test.sh"
+cp $EXEC_DIR/test.sh $EXEC_DIR/test2.sh
+
+cp "$RO_DIR/test.txt" "$RO_DIR_NESTED_RO/test.txt"
+cp "$RO_DIR/test.txt" "$RW_DIR_NESTED_RO/test.txt"
+
+cp "$RW_DIR/test.txt" "$RO_DIR_NESTED_RW/test.txt"
+cp "$RW_DIR/test.txt" "$RW_DIR_NESTED_RW/test.txt"
+
+cp "$EXEC_DIR/test.sh" "$RO_DIR_NESTED_EXEC/test.sh"
+cp "$EXEC_DIR/test.sh" "$RW_DIR_NESTED_EXEC/test.sh"
+cp "$EXEC_DIR/test.sh" "$RO_DIR_NESTED_RO/test.sh"
+cp "$EXEC_DIR/test.sh" "$RW_DIR_NESTED_RO/test.sh"
+cp "$EXEC_DIR/test.sh" "$RO_DIR_NESTED_RW/test.sh"
+cp "$EXEC_DIR/test.sh" "$RW_DIR_NESTED_RW/test.sh"
 
 # Create a script in RW dir to test execution in RW dirs
 echo "#!/bin/bash" > "$RW_DIR/rw_script.sh"
@@ -114,11 +136,22 @@ run_test() {
 # Test cases
 print_status "Starting test cases..."
 
-# Basic access tests
+Basic access tests
 run_test "Read-only access to file" \
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $RO_DIR -- cat $RO_DIR/test.txt" \
     0
 
+run_test "Read-only access to nested file" \
+    "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $RO_DIR -- cat $RO_DIR_NESTED_RO/test.txt" \
+    0
+
+run_test "Write access to nested directory writable nested in read-only directory" \
+    "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $RO_DIR --rw $RO_DIR_NESTED_RW -- touch $RO_DIR_NESTED_RW/created_file" \
+    0
+
+run_test "Write access to nested file writable nested in read-only directory" \
+    "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $RO_DIR --rw $RO_DIR_NESTED_RW/created_file -- touch $RO_DIR_NESTED_RW/created_file" \
+    0
 
 run_test "Read-write access to file" \
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $RO_DIR --rw $RW_DIR touch $RW_DIR/new.txt" \
@@ -132,6 +165,15 @@ run_test "No write access to read-only directory" \
 run_test "Execute access with rox flag" \
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --rox $EXEC_DIR -- $EXEC_DIR/test.sh" \
     0
+
+run_test "Execute access with rox flag on file" \
+    "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --rox $EXEC_DIR/test.sh -- $EXEC_DIR/test.sh" \
+    0
+
+run_test "Execute access with rox flag on a file that is executable in same directory that one is allowed" \
+    "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --rox $EXEC_DIR/test.sh -- $EXEC_DIR/test2.sh" \
+    1
+
 
 run_test "No execute access with just ro flag" \
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $EXEC_DIR -- $EXEC_DIR/test.sh" \

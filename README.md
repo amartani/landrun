@@ -12,7 +12,7 @@ It's lightweight, auditable, and wraps Landlock v5 features (file access + TCP r
 
 - 🔒 Kernel-level security using Landlock
 - 🚀 Lightweight and fast execution
-- 🛡️ Fine-grained access control for directories
+- 🛡️ Fine-grained access control for directories and files
 - 🔄 Support for read and write paths
 - ⚡ Path-specific execution permissions
 - 🌐 TCP network access control (binding and connecting)
@@ -83,18 +83,19 @@ landrun [options] <command> [args...]
 - `--env <var>`: Environment variable to pass to the sandboxed command (format: KEY=VALUE or just KEY to pass current value)
 - `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: disabled]
 - `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
-- `--unrestricted-network`: allows unrestricted network access.
-- `--unrestricted-filesystem`: allows unrestricted filesystem access.
+- `--unrestricted-network`: Allows unrestricted network access (disables all network restrictions)
+- `--unrestricted-filesystem`: Allows unrestricted filesystem access (disables all filesystem restrictions)
 
 ### Important Notes
 
-- You must explicitly add the directory to the command you want to run with `--rox` flag
+- You must explicitly add the directory or files to the command you want to run with `--rox` flag
 - For system commands, you typically need to include `/usr/bin`, `/usr/lib`, and other system directories
-- Use `--rwx` for directories where you need both write access and the ability to execute files
+- Use `--rwx` for directories or files where you need both write access and the ability to execute files
 - Network restrictions require Linux kernel 6.7 or later with Landlock ABI v4
 - By default, no environment variables are passed to the sandboxed command. Use `--env` to explicitly pass environment variables
 - The `--best-effort` flag allows graceful degradation on older kernels that don't support all requested restrictions
 - Paths can be specified either using multiple flags or as comma-separated values (e.g., `--ro /usr,/lib,/home`)
+- If no paths or network rules are specified and neither unrestricted flag is set, landrun will apply maximum restrictions (denying all access)
 
 ### Environment Variables
 
@@ -102,31 +103,43 @@ landrun [options] <command> [args...]
 
 ### Examples
 
-1. Run a command with read-only access to a directory:
+1. Run a command that allows exec access to a specific file
+
+```bash
+landrun --rox /usr/bin/ls --rox /usr/lib --ro /home ls /home
+```
+
+2. Run a command with read-only access to a directory:
 
 ```bash
 landrun --rox /usr/ --ro /path/to/dir ls /path/to/dir
 ```
 
-2. Run a command with write access to a directory:
+3. Run a command with write access to a directory:
 
 ```bash
 landrun --rox /usr/bin --ro /lib --rw /path/to/dir touch /path/to/dir/newfile
 ```
 
-3. Run a command with execution permissions:
+4. Run a command with write access to a file:
+
+```bash
+landrun --rox /usr/bin --ro /lib --rw /path/to/dir/newfile touch /path/to/dir/newfile
+```
+
+5. Run a command with execution permissions:
 
 ```bash
 landrun --rox /usr/ --ro /lib,/lib64 /usr/bin/bash
 ```
 
-4. Run with debug logging:
+6. Run with debug logging:
 
 ```bash
 landrun --log-level debug --rox /usr/ --ro /lib,/lib64,/path/to/dir ls /path/to/dir
 ```
 
-5. Run with network restrictions:
+7. Run with network restrictions:
 
 ```bash
 landrun --rox /usr/ --ro /lib,/lib64 --bind-tcp 8080 --connect-tcp 80 /usr/bin/my-server
@@ -134,7 +147,7 @@ landrun --rox /usr/ --ro /lib,/lib64 --bind-tcp 8080 --connect-tcp 80 /usr/bin/m
 
 This will allow the program to only bind to TCP port 8080 and connect to TCP port 80.
 
-6. Run a DNS client with appropriate permissions:
+8. Run a DNS client with appropriate permissions:
 
 ```bash
 landrun --log-level debug --ro /etc,/usr --rox /usr/ --connect-tcp 443 nc kernel.org 443
@@ -142,25 +155,25 @@ landrun --log-level debug --ro /etc,/usr --rox /usr/ --connect-tcp 443 nc kernel
 
 This allows connections to port 443, requires access to /etc/resolv.conf for resolving DNS.
 
-7. Run a web server with selective network permissions:
+9. Run a web server with selective network permissions:
 
 ```bash
 landrun --rox /usr/bin --ro /lib,/lib64,/var/www --rwx /var/log --bind-tcp 80,443 /usr/bin/nginx
 ```
 
-8. Running anything without providing parameters is... maximum security jail!
+10. Running anything without providing parameters is... maximum security jail!
 
 ```bash
 landrun ls
 ```
 
-9. If you keep getting permission denied without knowing what exactly going on, best to use strace with it.
+11. If you keep getting permission denied without knowing what exactly going on, best to use strace with it.
 
 ```bash
 landrun --rox /usr strace -f -e trace=all ls
 ```
 
-10. Run with specific environment variables:
+12. Run with specific environment variables:
 
 ```bash
 landrun --rox /usr --ro /etc --env HOME --env PATH --env CUSTOM_VAR=my_value -- env
@@ -177,6 +190,7 @@ landrun uses Linux's Landlock to create a secure sandbox environment. It provide
 - Execution control
 - TCP network restrictions
 - Process isolation
+- Default restrictive mode when no rules are specified
 
 Landlock is an access-control system that enables processes to securely restrict themselves and their future children. As a stackable Linux Security Module (LSM), it creates additional security layers on top of existing system-wide access controls, helping to mitigate security impacts from bugs or malicious behavior in applications.
 
@@ -190,6 +204,7 @@ landrun leverages Landlock's fine-grained access control mechanisms, which inclu
 - Write to files (`LANDLOCK_ACCESS_FS_WRITE_FILE`)
 - Read files (`LANDLOCK_ACCESS_FS_READ_FILE`)
 - Truncate files (`LANDLOCK_ACCESS_FS_TRUNCATE`) - Available since Landlock ABI v3
+- IOCTL operations on devices (`LANDLOCK_ACCESS_FS_IOCTL_DEV`) - Available since Landlock ABI v5
 
 **Directory-specific rights:**
 
@@ -261,6 +276,8 @@ When using `--best-effort` (disabled by default), landrun will gracefully degrad
 - On Linux 5.19-6.1: Basic filesystem restrictions including file reparenting, but no truncation control or network restrictions
 - On Linux 5.13-5.18: Basic filesystem restrictions without file reparenting, truncation control, or network restrictions
 - On older Linux: No restrictions (sandbox disabled)
+
+When no rules are specified and neither unrestricted flag is set, landrun will apply maximum restrictions available for the current kernel version.
 
 ### Tests
 

@@ -2,6 +2,7 @@ package sandbox
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/landlock-lsm/go-landlock/landlock/syscall"
@@ -21,62 +22,82 @@ type Config struct {
 }
 
 // getReadWriteExecutableRights returns a full set of permissions including execution
-func getReadWriteExecutableRights() landlock.AccessFSSet {
+func getReadWriteExecutableRights(dir bool) landlock.AccessFSSet {
 	accessRights := landlock.AccessFSSet(0)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSExecute)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSWriteFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSTruncate)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeChar)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeDir)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeReg)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSock)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeFifo)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeBlock)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSym)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSRefer)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSIoctlDev)
+
+	if dir {
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeChar)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeDir)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeReg)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSock)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeFifo)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeBlock)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSym)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSRefer)
+	}
+
 	return accessRights
 }
 
-func getReadOnlyExecutableRights() landlock.AccessFSSet {
+func getReadOnlyExecutableRights(dir bool) landlock.AccessFSSet {
 	accessRights := landlock.AccessFSSet(0)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSExecute)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
+	if dir {
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
+	}
 	return accessRights
 }
 
 // getReadOnlyRights returns permissions for read-only access
-func getReadOnlyRights() landlock.AccessFSSet {
+func getReadOnlyRights(dir bool) landlock.AccessFSSet {
 	accessRights := landlock.AccessFSSet(0)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
+	if dir {
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
+	}
 	return accessRights
 }
 
 // getReadWriteRights returns permissions for read-write access
-func getReadWriteRights() landlock.AccessFSSet {
+func getReadWriteRights(dir bool) landlock.AccessFSSet {
 	accessRights := landlock.AccessFSSet(0)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadFile)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSWriteFile)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSTruncate)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeChar)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeDir)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeReg)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSock)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeFifo)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeBlock)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSym)
-	accessRights |= landlock.AccessFSSet(syscall.AccessFSRefer)
 	accessRights |= landlock.AccessFSSet(syscall.AccessFSIoctlDev)
+	if dir {
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSReadDir)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveDir)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSRemoveFile)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeChar)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeDir)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeReg)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSock)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeFifo)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeBlock)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSMakeSym)
+		accessRights |= landlock.AccessFSSet(syscall.AccessFSRefer)
+	}
+
 	return accessRights
+}
+
+// isDirectory checks if the given path is a directory
+func isDirectory(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fileInfo.IsDir()
 }
 
 func Apply(cfg Config) error {
@@ -95,24 +116,24 @@ func Apply(cfg Config) error {
 	// Process executable paths
 	for _, path := range cfg.ReadOnlyExecutablePaths {
 		log.Debug("Adding read-only executable path: %s", path)
-		file_rules = append(file_rules, landlock.PathAccess(getReadOnlyExecutableRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadOnlyExecutableRights(isDirectory(path)), path))
 	}
 
 	for _, path := range cfg.ReadWriteExecutablePaths {
 		log.Debug("Adding read-write executable path: %s", path)
-		file_rules = append(file_rules, landlock.PathAccess(getReadWriteExecutableRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadWriteExecutableRights(isDirectory(path)), path))
 	}
 
 	// Process read-only paths
 	for _, path := range cfg.ReadOnlyPaths {
 		log.Debug("Adding read-only path: %s", path)
-		file_rules = append(file_rules, landlock.PathAccess(getReadOnlyRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadOnlyRights(isDirectory(path)), path))
 	}
 
 	// Process read-write paths
 	for _, path := range cfg.ReadWritePaths {
 		log.Debug("Adding read-write path: %s", path)
-		file_rules = append(file_rules, landlock.PathAccess(getReadWriteRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadWriteRights(isDirectory(path)), path))
 	}
 
 	// Add rules for TCP port binding
