@@ -89,59 +89,59 @@ func Apply(cfg Config) error {
 	}
 
 	// Collect our rules
-	var rules []landlock.Rule
+	var file_rules []landlock.Rule
+	var net_rules []landlock.Rule
 
 	// Process executable paths
 	for _, path := range cfg.ReadOnlyExecutablePaths {
 		log.Debug("Adding read-only executable path: %s", path)
-		rules = append(rules, landlock.PathAccess(getReadOnlyExecutableRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadOnlyExecutableRights(), path))
 	}
 
 	for _, path := range cfg.ReadWriteExecutablePaths {
 		log.Debug("Adding read-write executable path: %s", path)
-		rules = append(rules, landlock.PathAccess(getReadWriteExecutableRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadWriteExecutableRights(), path))
 	}
 
 	// Process read-only paths
 	for _, path := range cfg.ReadOnlyPaths {
 		log.Debug("Adding read-only path: %s", path)
-		rules = append(rules, landlock.PathAccess(getReadOnlyRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadOnlyRights(), path))
 	}
 
 	// Process read-write paths
 	for _, path := range cfg.ReadWritePaths {
 		log.Debug("Adding read-write path: %s", path)
-		rules = append(rules, landlock.PathAccess(getReadWriteRights(), path))
+		file_rules = append(file_rules, landlock.PathAccess(getReadWriteRights(), path))
 	}
 
 	// Add rules for TCP port binding
 	for _, port := range cfg.BindTCPPorts {
 		log.Debug("Adding TCP bind port: %d", port)
-		rules = append(rules, landlock.BindTCP(uint16(port)))
+		net_rules = append(net_rules, landlock.BindTCP(uint16(port)))
 	}
 
 	// Add rules for TCP connections
 	for _, port := range cfg.ConnectTCPPorts {
 		log.Debug("Adding TCP connect port: %d", port)
-		rules = append(rules, landlock.ConnectTCP(uint16(port)))
+		net_rules = append(net_rules, landlock.ConnectTCP(uint16(port)))
+	}
+
+	if cfg.UnrestrictedFilesystem && cfg.UnrestrictedNetwork {
+		log.Info("Unrestricted filesystem and network access enabled; no rules applied.")
+		return nil
 	}
 
 	if cfg.UnrestrictedFilesystem {
-		log.Info("Unrestricted filesystem access enabled")
-		rules = append(rules, landlock.PathAccess(getReadWriteExecutableRights(), "/"))
+		log.Info("Unrestricted filesystem access enabled.")
 	}
 
 	if cfg.UnrestrictedNetwork {
 		log.Info("Unrestricted network access enabled")
-		// TODO: This is a hack to allow all network access. We should find a better way to do this.
-		for i := 0; i < 65535; i++ {
-			rules = append(rules, landlock.BindTCP(uint16(i)))
-			rules = append(rules, landlock.ConnectTCP(uint16(i)))
-		}
 	}
 
 	// If we have no rules, just return
-	if len(rules) == 0 {
+	if len(file_rules) == 0 && len(net_rules) == 0 && !cfg.UnrestrictedFilesystem && !cfg.UnrestrictedNetwork {
 		log.Error("No rules provided, applying default restrictive rules, this will restrict anything landlock can do.")
 		err := llCfg.Restrict()
 		if err != nil {
@@ -153,9 +153,17 @@ func Apply(cfg Config) error {
 
 	// Apply all rules at once
 	log.Debug("Applying Landlock restrictions")
-	err := llCfg.Restrict(rules...)
-	if err != nil {
-		return fmt.Errorf("failed to apply Landlock restrictions: %w", err)
+	if !cfg.UnrestrictedFilesystem {
+		err := llCfg.RestrictPaths(file_rules...)
+		if err != nil {
+			return fmt.Errorf("failed to apply Landlock filesystem restrictions: %w", err)
+		}
+	}
+	if !cfg.UnrestrictedNetwork {
+		err := llCfg.RestrictNet(net_rules...)
+		if err != nil {
+			return fmt.Errorf("failed to apply Landlock network restrictions: %w", err)
+		}
 	}
 
 	log.Info("Landlock restrictions applied successfully")
