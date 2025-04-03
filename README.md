@@ -181,6 +181,58 @@ landrun --rox /usr --ro /etc --env HOME --env PATH --env CUSTOM_VAR=my_value -- 
 
 This example passes the current HOME and PATH variables, plus a custom variable named CUSTOM_VAR.
 
+## Systemd Integration
+
+landrun can be integrated with systemd to run services with enhanced security. Here's an example of running nginx with landrun:
+
+1. Create a systemd service file (e.g., `/etc/systemd/system/nginx-landrun.service`):
+
+```ini
+[Unit]
+Description=nginx with landrun sandbox
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/landrun \
+    --rox /usr/bin \
+    --ro /lib,/lib64,/etc/nginx,/etc/ssl,/etc/passwd,/etc/group,/etc/nsswitch.conf \
+    --rwx /var/log/nginx \
+    --rwx /var/cache/nginx \
+    --bind-tcp 80,443 \
+    /usr/bin/nginx -g 'daemon off;'
+Restart=always
+User=nginx
+Group=nginx
+
+[Install]
+WantedBy=multi-user.target
+```
+
+2. Enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable nginx-landrun
+sudo systemctl start nginx-landrun
+```
+
+3. Check the service status:
+
+```bash
+sudo systemctl status nginx-landrun
+```
+
+This configuration:
+- Runs nginx with minimal required permissions
+- Allows binding to ports 80 and 443
+- Provides read-only access to configuration files
+- Allows write access only to log and cache directories
+- Runs as the nginx user and group
+- Automatically restarts on failure
+
+You can adjust the permissions based on your specific needs. For example, if you need to serve static files from `/var/www`, add `--ro /var/www` to the ExecStart line.
+
 ## Security
 
 landrun uses Linux's Landlock to create a secure sandbox environment. It provides:
