@@ -202,8 +202,8 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/landrun \
-    --rox /usr/bin \
-    --ro /lib,/lib64,/etc/nginx,/etc/ssl,/etc/passwd,/etc/group,/etc/nsswitch.conf \
+    --rox /usr/bin,/usr/lib \
+    --ro  /etc/nginx,/etc/ssl,/etc/passwd,/etc/group,/etc/nsswitch.conf \
     --rwx /var/log/nginx \
     --rwx /var/cache/nginx \
     --bind-tcp 80,443 \
