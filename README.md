@@ -397,10 +397,6 @@ This project wouldn't exist without:
 - [Landlock](https://landlock.io), the kernel security module enabling unprivileged sandboxing - maintained by [@l0kod](https://github.com/l0kod)
 - [go-landlock](https://github.com/landlock-lsm/go-landlock), the Go bindings powering this tool - developed by [@gnoack](https://github.com/gnoack)
 
-## License
-
-This project is licensed under the GNU General Public License v2
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
