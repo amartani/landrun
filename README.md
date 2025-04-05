@@ -1,4 +1,4 @@
-# landrun
+# Landrun <img src="https://avatars.githubusercontent.com/u/21111839?s=48&v=4" align="right"/>
 
 A lightweight, secure sandbox for running Linux processes using Landlock. Think firejail, but with kernel-level security and minimal overhead.
 
