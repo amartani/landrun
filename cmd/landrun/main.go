@@ -12,7 +12,7 @@ import (
 )
 
 // Version is the current version of landrun
-const Version = "0.1.14"
+const Version = "0.1.15"
 
 // getLibraryDependencies returns a list of library paths that the given binary depends on
 func getLibraryDependencies(binary string) ([]string, error) {
