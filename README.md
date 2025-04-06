@@ -181,6 +181,8 @@ landrun --rox /usr strace -f -e trace=all ls
 landrun --rox /usr --ro /etc --env HOME --env PATH --env CUSTOM_VAR=my_value -- env
 ```
 
+This example passes the current HOME and PATH variables, plus a custom variable named CUSTOM_VAR.
+
 13. Run command with explicity access to files instead of directories:
 ```bash
 landrun --rox /usr/lib/libc.so.6 --rox /usr/lib64/ld-linux-x86-64.so.2  --rox /usr/bin/true /usr/bin/true
@@ -199,8 +201,6 @@ landrun --ldd --add-exec /usr/bin/true
 ```
 
 Note that shared libs always need exec permission due to how they are loaded, PROT_EXEC on mmap() etc.
-
-This example passes the current HOME and PATH variables, plus a custom variable named CUSTOM_VAR.
 
 ## Systemd Integration
 
