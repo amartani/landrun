@@ -49,14 +49,12 @@ sudo cp landrun /usr/local/bin/
 ### Distros
 
 #### Arch (AUR)
-maintained by [Vcalv](https://github.com/vcalv)
 
-[AUR](https://aur.archlinux.org/packages/landrun-git)
-```bash
-yay -S landrun
-```
+- [stable](https://aur.archlinux.org/packages/landrun) maintained by [Vcalv](https://github.com/vcalv)
+- [latest commit](https://aur.archlinux.org/packages/landrun-git) maintained by [juxuanu](https://github.com/juxuanu/)
 
 #### Slackware
+
 maintained by [r1w1s1](https://github.com/r1w1s1)
 
 [Slackbuild](https://slackbuilds.org/repository/15.0/network/landrun/?search=landrun)
