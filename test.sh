@@ -136,7 +136,7 @@ run_test() {
 # Test cases
 print_status "Starting test cases..."
 
-Basic access tests
+# Basic access tests
 run_test "Read-only access to file" \
     "./landrun --log-level debug --rox /usr --ro /lib --ro /lib64 --ro $RO_DIR -- cat $RO_DIR/test.txt" \
     0
@@ -265,6 +265,14 @@ run_test "Passing specific environment variable" \
 
 run_test "Passing custom environment variable" \
     "./landrun --log-level debug --rox /usr --ro / --env CUSTOM_VAR=custom_value -- bash -c 'echo \$CUSTOM_VAR | grep \"custom_value\"'" \
+    0
+
+run_test "Propagate environment variables" \
+    "./landrun --log-level debug --rox /usr --ro / --propagate-env -- bash -c 'echo \$TEST_ENV_VAR | grep \"test_value_123\"'" \
+    0
+
+run_test "Override propagated environment variable with --env" \
+    "./landrun --log-level debug --rox /usr --ro / --propagate-env --env TEST_ENV_VAR=overridden -- bash -c 'echo \$TEST_ENV_VAR | grep \"overridden\"'" \
     0
 
 # Combining different permission types

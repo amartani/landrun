@@ -90,6 +90,11 @@ func main() {
 				Value: cli.NewStringSlice(),
 			},
 			&cli.BoolFlag{
+				Name:  "propagate-env",
+				Usage: "Propagate all environment variables from the parent process",
+				Value: false,
+			},
+			&cli.BoolFlag{
 				Name:  "unrestricted-filesystem",
 				Usage: "Allow unrestricted filesystem access",
 				Value: false,
@@ -167,7 +172,7 @@ func main() {
 			}
 
 			// Process environment variables
-			envVars := processEnvironmentVars(c.StringSlice("env"))
+			envVars := buildEnvironment(c.Bool("propagate-env"), c.StringSlice("env"))
 
 			if err := sandbox.Apply(cfg); err != nil {
 				log.Fatal("Failed to apply sandbox: %v", err)
@@ -182,20 +187,39 @@ func main() {
 	}
 }
 
-// processEnvironmentVars processes the env flag values
-func processEnvironmentVars(envFlags []string) []string {
-	result := []string{}
+// buildEnvironment constructs the environment for the sandboxed command.
+// It starts with the parent's environment if propagateEnv is true,
+// then overlays any variables from envFlags.
+func buildEnvironment(propagateEnv bool, envFlags []string) []string {
+	envMap := make(map[string]string)
+
+	if propagateEnv {
+		for _, e := range os.Environ() {
+			parts := strings.SplitN(e, "=", 2)
+			if len(parts) == 2 {
+				envMap[parts[0]] = parts[1]
+			}
+		}
+	}
 
 	for _, env := range envFlags {
-		// If the flag is just a key (no = sign), get the value from the current environment
 		if !strings.Contains(env, "=") {
+			// It's just a key, look it up from the current environment
 			if val, exists := os.LookupEnv(env); exists {
-				result = append(result, env+"="+val)
+				envMap[env] = val
 			}
 		} else {
-			// Flag already contains the value (KEY=VALUE format)
-			result = append(result, env)
+			// It's a KEY=VALUE pair
+			parts := strings.SplitN(env, "=", 2)
+			if len(parts) == 2 {
+				envMap[parts[0]] = parts[1]
+			}
 		}
+	}
+
+	result := make([]string, 0, len(envMap))
+	for k, v := range envMap {
+		result = append(result, k+"="+v)
 	}
 
 	return result

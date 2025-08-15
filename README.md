@@ -79,6 +79,7 @@ landrun [options] <command> [args...]
 - `--bind-tcp <port>`: Allow binding to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--connect-tcp <port>`: Allow connecting to specified TCP port (can be specified multiple times or as comma-separated values)
 - `--env <var>`: Environment variable to pass to the sandboxed command (format: KEY=VALUE or just KEY to pass current value)
+- `--propagate-env`: Propagate all environment variables from the parent process
 - `--best-effort`: Use best effort mode, falling back to less restrictive sandbox if necessary [default: disabled]
 - `--log-level <level>`: Set logging level (error, info, debug) [default: "error"]
 - `--unrestricted-network`: Allows unrestricted network access (disables all network restrictions)
@@ -92,7 +93,7 @@ landrun [options] <command> [args...]
 - For system commands, you typically need to include `/usr/bin`, `/usr/lib`, and other system directories
 - Use `--rwx` for directories or files where you need both write access and the ability to execute files
 - Network restrictions require Linux kernel 6.7 or later with Landlock ABI v4
-- By default, no environment variables are passed to the sandboxed command. Use `--env` to explicitly pass environment variables
+- By default, no environment variables are passed to the sandboxed command. Use `--env` to explicitly pass environment variables, or `--propagate-env` to pass all of them.
 - The `--best-effort` flag allows graceful degradation on older kernels that don't support all requested restrictions
 - Paths can be specified either using multiple flags or as comma-separated values (e.g., `--ro /usr,/lib,/home`)
 - If no paths or network rules are specified and neither unrestricted flag is set, landrun will apply maximum restrictions (denying all access)
