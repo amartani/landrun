@@ -111,7 +111,7 @@ func main() {
 				log.Fatal("Failed to find binary: %v", err)
 			}
 
-			// Add command's directory to readOnlyExecutablePaths
+			// Add command to readOnlyExecutablePaths
 			if c.Bool("add-exec") {
 				readOnlyExecutablePaths = append(readOnlyExecutablePaths, binary)
 				log.Debug("Added executable path: %v", binary)
