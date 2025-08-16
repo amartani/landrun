@@ -32,7 +32,8 @@ func TestParseAndResolveTrue(t *testing.T) {
 	}
 
 	origin := filepath.Dir(bin)
-	paths := resolveSonames(needed, rpaths, origin)
+	rpaths = normalizeRpaths(rpaths, origin)
+	paths := resolveSonames(needed, rpaths)
 	if paths == nil {
 		paths = []string{}
 	}
@@ -117,7 +118,8 @@ func TestResolveSonamesUsesLdmapFallback(t *testing.T) {
 	}
 
 	// needed contains a soname that won't be found in rpaths or std dirs
-	out := resolveSonames([]string{"libfake2.so"}, []string{}, tmpDir)
+	rpaths := normalizeRpaths([]string{}, tmpDir)
+	out := resolveSonames([]string{"libfake2.so"}, rpaths)
 	if len(out) != 1 {
 		t.Fatalf("expected 1 resolved path, got %d", len(out))
 	}
@@ -143,7 +145,8 @@ func TestResolveSonamesOriginExpansion(t *testing.T) {
 	f.Close()
 
 	// rpath using $ORIGIN should resolve to tmpDir/lib
-	out := resolveSonames([]string{libName}, []string{"$ORIGIN/lib"}, tmpDir)
+	rpaths1 := normalizeRpaths([]string{"$ORIGIN/lib"}, tmpDir)
+	out := resolveSonames([]string{libName}, rpaths1)
 	if len(out) != 1 {
 		t.Fatalf("expected 1 resolved path for $ORIGIN, got %d", len(out))
 	}
@@ -152,7 +155,8 @@ func TestResolveSonamesOriginExpansion(t *testing.T) {
 	}
 
 	// relative rpath should also resolve against origin
-	out2 := resolveSonames([]string{libName}, []string{"lib"}, tmpDir)
+	rpaths2 := normalizeRpaths([]string{"lib"}, tmpDir)
+	out2 := resolveSonames([]string{libName}, rpaths2)
 	if len(out2) != 1 {
 		t.Fatalf("expected 1 resolved path for relative rpath, got %d", len(out2))
 	}

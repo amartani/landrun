@@ -54,21 +54,19 @@ func getLdmap() map[string]string {
 
 // parseInterp extracts the PT_INTERP interpreter path from an ELF file.
 func parseInterp(f *elf.File) string {
-	interp := ""
 	for _, prog := range f.Progs {
 		if prog.Type == elf.PT_INTERP {
 			r := prog.Open()
 			if r == nil {
-				// Can't read interpreter; return what we have (empty)
-				break
+				// Can't read interpreter
+				return ""
 			}
 			if data, err := io.ReadAll(r); err == nil {
-				interp = strings.TrimRight(string(data), "\x00")
+				return strings.TrimRight(string(data), "\x00")
 			}
-			break
 		}
 	}
-	return interp
+	return ""
 }
 
 // parseDynamic extracts DT_NEEDED and RPATH/RUNPATH entries from the .dynamic section.
@@ -100,69 +98,75 @@ func parseDynamic(f *elf.File) (needed []string, rpaths []string) {
 	return
 }
 
+// normalizeRpaths expands common tokens like $ORIGIN and makes relative
+// rpath entries absolute using the provided origin directory.
+func normalizeRpaths(rpaths []string, origin string) []string {
+	out := []string{}
+	for _, rp := range rpaths {
+		if rp == "" {
+			continue
+		}
+		// expand $ORIGIN (common token in RPATH/RUNPATH)
+		rp = strings.ReplaceAll(rp, "$ORIGIN", origin)
+		rp = strings.ReplaceAll(rp, "${ORIGIN}", origin)
+		// make relative rpath entries absolute using origin
+		if !filepath.IsAbs(rp) {
+			rp = filepath.Join(origin, rp)
+		}
+		out = append(out, rp)
+	}
+	return out
+}
+
+// resolveSingleSoname attempts to resolve a single soname using rpaths,
+// standard dirs and ldconfig fallback. It takes a pointer to ldmap so the
+// caller can lazily populate and reuse it.
+func resolveSingleSoname(soname string, rpaths []string, stdDirs []string, ldmap *map[string]string) string {
+	// check rpaths first
+	for _, rp := range rpaths {
+		candidate := filepath.Join(rp, soname)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+
+	// then check standard dirs
+	for _, d := range stdDirs {
+		candidate := filepath.Join(d, soname)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+
+	// fallback: consult parsed ldconfig map (populate lazily)
+	if *ldmap == nil {
+		*ldmap = getLdmap()
+	}
+	if p, ok := (*ldmap)[soname]; ok {
+		return p
+	}
+
+	return ""
+}
+
 // resolveSonames attempts to resolve sonames to absolute paths using rpaths,
 // standard library directories and falling back to parsing `ldconfig -p` output.
-// The origin parameter should be the directory containing the binary (used to
-// expand $ORIGIN and resolve relative RPATH entries).
-func resolveSonames(needed []string, rpaths []string, origin string) []string {
+func resolveSonames(needed []string, rpaths []string) []string {
 	resolved := map[string]string{}
-	seen := map[string]struct{}{}
-
 	stdDirs := []string{"/lib", "/lib64", "/usr/lib", "/usr/lib64", "/usr/local/lib"}
-
 	var ldmap map[string]string
 
-	var resolveOne func(string) string
-	resolveOne = func(soname string) string {
-		if p, ok := resolved[soname]; ok {
-			return p
+	for _, soname := range needed {
+		if _, ok := resolved[soname]; ok {
+			continue
 		}
-		if _, s := seen[soname]; s {
-			return ""
-		}
-		seen[soname] = struct{}{}
-
-		candidates := []string{}
-		for _, rp := range rpaths {
-			if rp == "" {
-				continue
-			}
-			// expand $ORIGIN (common token in RPATH/RUNPATH)
-			rp = strings.ReplaceAll(rp, "$ORIGIN", origin)
-			rp = strings.ReplaceAll(rp, "${ORIGIN}", origin)
-			// make relative rpath entries absolute using origin
-			if !filepath.IsAbs(rp) {
-				rp = filepath.Join(origin, rp)
-			}
-			candidates = append(candidates, filepath.Join(rp, soname))
-		}
-		for _, d := range stdDirs {
-			candidates = append(candidates, filepath.Join(d, soname))
-		}
-
-		for _, cand := range candidates {
-			if _, err := os.Stat(cand); err == nil {
-				resolved[soname] = cand
-				return cand
-			}
-		}
-
-		// fallback: consult parsed ldconfig map (populate lazily)
-		if ldmap == nil {
-			ldmap = getLdmap()
-		}
-		if p, ok := ldmap[soname]; ok {
-			resolved[soname] = p
-			return p
-		}
-
-		return ""
+		resolved[soname] = resolveSingleSoname(soname, rpaths, stdDirs, &ldmap)
 	}
 
 	out := []string{}
-	for _, s := range needed {
-		if p := resolveOne(s); p != "" {
-			out = append(out, p)
+	for _, r := range resolved {
+		if r != "" {
+			out = append(out, r)
 		}
 	}
 	return out
@@ -179,27 +183,25 @@ func GetLibraryDependencies(binary string) ([]string, error) {
 	interpPath := parseInterp(f)
 	needed, rpaths := parseDynamic(f)
 	origin := filepath.Dir(binary)
-	libPaths := resolveSonames(needed, rpaths, origin)
+	rpaths = normalizeRpaths(rpaths, origin)
+	libPaths := resolveSonames(needed, rpaths)
 
-	finalPaths := []string{}
+	// Dedupe using a map
+	finalMap := map[string]struct{}{}
 	if interpPath != "" {
-		finalPaths = append(finalPaths, interpPath)
+		finalMap[interpPath] = struct{}{}
 	}
-	finalPaths = append(finalPaths, libPaths...)
-
+	for _, p := range libPaths {
+		finalMap[p] = struct{}{}
+	}
 	// Add /etc/ld.so.cache if present
 	if _, err := os.Stat("/etc/ld.so.cache"); err == nil {
-		finalPaths = append(finalPaths, "/etc/ld.so.cache")
+		finalMap["/etc/ld.so.cache"] = struct{}{}
 	}
 
-	// Flatten unique list
-	out := []string{}
-	seenOut := map[string]struct{}{}
-	for _, p := range finalPaths {
-		if _, ok := seenOut[p]; !ok {
-			out = append(out, p)
-			seenOut[p] = struct{}{}
-		}
+	out := make([]string, 0, len(finalMap))
+	for p := range finalMap {
+		out = append(out, p)
 	}
 
 	return out, nil
