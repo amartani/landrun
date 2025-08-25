@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"github.com/zouuup/landrun/internal/elfdeps"
 	"github.com/zouuup/landrun/internal/exec"
 	"github.com/zouuup/landrun/internal/log"
 	"github.com/zouuup/landrun/internal/sandbox"
@@ -13,33 +14,6 @@ import (
 
 // Version is the current version of landrun
 const Version = "0.1.15"
-
-// getLibraryDependencies returns a list of library paths that the given binary depends on
-func getLibraryDependencies(binary string) ([]string, error) {
-	cmd := osexec.Command("ldd", binary)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-
-	var libPaths []string
-	lines := strings.Split(string(output), "\n")
-	for _, line := range lines {
-		// Skip empty lines and the first line (usually the binary name)
-		if line == "" || !strings.Contains(line, "=>") {
-			continue
-		}
-		// Extract the library path
-		parts := strings.Fields(line)
-		if len(parts) >= 3 {
-			libPath := strings.Trim(parts[2], "()")
-			if libPath != "" {
-				libPaths = append(libPaths, libPath)
-			}
-		}
-	}
-	return libPaths, nil
-}
 
 func main() {
 	app := &cli.App{
@@ -137,7 +111,7 @@ func main() {
 				log.Fatal("Failed to find binary: %v", err)
 			}
 
-			// Add command's directory to readOnlyExecutablePaths
+			// Add command to readOnlyExecutablePaths
 			if c.Bool("add-exec") {
 				readOnlyExecutablePaths = append(readOnlyExecutablePaths, binary)
 				log.Debug("Added executable path: %v", binary)
@@ -145,7 +119,7 @@ func main() {
 
 			// If --ldd flag is set, detect and add library dependencies
 			if c.Bool("ldd") {
-				libPaths, err := getLibraryDependencies(binary)
+				libPaths, err := elfdeps.GetLibraryDependencies(binary)
 				if err != nil {
 					log.Fatal("Failed to detect library dependencies: %v", err)
 				}
