@@ -51,6 +51,51 @@ func TestParseAndResolveTrue(t *testing.T) {
 	}
 }
 
+func TestRecursiveDependencies(t *testing.T) {
+	// These files are created by the test setup script
+	testBin := "../../testdata/test_binary"
+	libA := "../../testdata/liba.so"
+	libB := "../../testdata/libb.so"
+
+	for _, f := range []string{testBin, libA, libB} {
+		if _, err := os.Stat(f); err != nil {
+			t.Fatalf("test file %s not found, did you run the setup script?", f)
+		}
+	}
+
+	absLibA, err := filepath.Abs(libA)
+	if err != nil {
+		t.Fatalf("failed to get absolute path for %s: %v", libA, err)
+	}
+	absLibB, err := filepath.Abs(libB)
+	if err != nil {
+		t.Fatalf("failed to get absolute path for %s: %v", libB, err)
+	}
+
+	deps, err := GetLibraryDependencies(testBin)
+	if err != nil {
+		t.Fatalf("GetLibraryDependencies failed: %v", err)
+	}
+
+	foundA := false
+	foundB := false
+	for _, dep := range deps {
+		if dep == absLibA {
+			foundA = true
+		}
+		if dep == absLibB {
+			foundB = true
+		}
+	}
+
+	if !foundA {
+		t.Errorf("expected to find %s in dependency list, but didn't. Found: %v", absLibA, deps)
+	}
+	if !foundB {
+		t.Errorf("expected to find %s in dependency list, but didn't. Found: %v", absLibB, deps)
+	}
+}
+
 func TestGetLibraryDependencies(t *testing.T) {
 	bin, err := exec.LookPath("true")
 	if err != nil {
