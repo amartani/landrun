@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -70,6 +71,59 @@ func TestGetLibraryDependencies(t *testing.T) {
 		}
 		if _, err := os.Stat(p); err != nil {
 			t.Fatalf("path %s does not exist: %v", p, err)
+		}
+	}
+}
+
+// Ensure that transitive library dependencies are resolved similarly to `ldd`
+func TestGetLibraryDependenciesMatchesLdd(t *testing.T) {
+	bin, err := exec.LookPath("ls")
+	if err != nil {
+		t.Fatalf("failed to find 'ls' binary: %v", err)
+	}
+
+	deps, err := GetLibraryDependencies(bin)
+	if err != nil {
+		t.Fatalf("GetLibraryDependencies failed: %v", err)
+	}
+	depMap := map[string]struct{}{}
+	for _, d := range deps {
+		depMap[d] = struct{}{}
+	}
+
+	out, err := exec.Command("ldd", bin).Output()
+	if err != nil {
+		t.Fatalf("failed to run ldd: %v", err)
+	}
+
+	lines := strings.Split(string(out), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.Contains(line, "not found") {
+			continue
+		}
+		var path string
+		if strings.Contains(line, "=>") {
+			parts := strings.Split(line, "=>")
+			if len(parts) < 2 {
+				continue
+			}
+			right := strings.TrimSpace(parts[1])
+			fields := strings.Fields(right)
+			if len(fields) > 0 {
+				path = fields[0]
+			}
+		} else {
+			fields := strings.Fields(line)
+			if len(fields) > 0 {
+				path = fields[0]
+			}
+		}
+		if !strings.HasPrefix(path, "/") {
+			continue
+		}
+		if _, ok := depMap[path]; !ok {
+			t.Fatalf("missing dependency %s", path)
 		}
 	}
 }
