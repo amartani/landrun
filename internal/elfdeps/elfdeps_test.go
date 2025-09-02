@@ -52,26 +52,37 @@ func TestParseAndResolveTrue(t *testing.T) {
 }
 
 func TestRecursiveDependencies(t *testing.T) {
-	// These files are created by the test setup script
-	testBin := "../../testdata/test_binary"
-	libA := "../../testdata/liba.so"
-	libB := "../../testdata/libb.so"
+	if _, err := exec.LookPath("gcc"); err != nil {
+		t.Skip("gcc not found, skipping test")
+	}
+	// Create a temporary directory for compiled artifacts
+	tempDir := t.TempDir()
 
-	for _, f := range []string{testBin, libA, libB} {
-		if _, err := os.Stat(f); err != nil {
-			t.Fatalf("test file %s not found, did you run the setup script?", f)
-		}
+	// Compile liba.so
+	libaSrc := "testdata/liba.c"
+	libaSo := filepath.Join(tempDir, "liba.so")
+	cmd := exec.Command("gcc", "-fPIC", "-shared", "-o", libaSo, libaSrc)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to compile liba.so: %v\n%s", err, string(out))
 	}
 
-	absLibA, err := filepath.Abs(libA)
-	if err != nil {
-		t.Fatalf("failed to get absolute path for %s: %v", libA, err)
-	}
-	absLibB, err := filepath.Abs(libB)
-	if err != nil {
-		t.Fatalf("failed to get absolute path for %s: %v", libB, err)
+	// Compile libb.so
+	libbSrc := "testdata/libb.c"
+	libbSo := filepath.Join(tempDir, "libb.so")
+	cmd = exec.Command("gcc", "-fPIC", "-shared", "-o", libbSo, libbSrc, "-L"+tempDir, "-la", "-Wl,-rpath,$ORIGIN")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to compile libb.so: %v\n%s", err, string(out))
 	}
 
+	// Compile test_binary
+	mainSrc := "testdata/main.c"
+	testBin := filepath.Join(tempDir, "test_binary")
+	cmd = exec.Command("gcc", "-o", testBin, mainSrc, "-L"+tempDir, "-lb", "-Wl,-rpath,$ORIGIN")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to compile test_binary: %v\n%s", err, string(out))
+	}
+
+	// Run the actual test logic
 	deps, err := GetLibraryDependencies(testBin)
 	if err != nil {
 		t.Fatalf("GetLibraryDependencies failed: %v", err)
@@ -80,19 +91,19 @@ func TestRecursiveDependencies(t *testing.T) {
 	foundA := false
 	foundB := false
 	for _, dep := range deps {
-		if dep == absLibA {
+		if dep == libaSo {
 			foundA = true
 		}
-		if dep == absLibB {
+		if dep == libbSo {
 			foundB = true
 		}
 	}
 
 	if !foundA {
-		t.Errorf("expected to find %s in dependency list, but didn't. Found: %v", absLibA, deps)
+		t.Errorf("expected to find %s in dependency list, but didn't. Found: %v", libaSo, deps)
 	}
 	if !foundB {
-		t.Errorf("expected to find %s in dependency list, but didn't. Found: %v", absLibB, deps)
+		t.Errorf("expected to find %s in dependency list, but didn't. Found: %v", libbSo, deps)
 	}
 }
 
